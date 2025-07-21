@@ -7,7 +7,8 @@ import SendIcon from '@mui/icons-material/Send';
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { ToastContext } from '../App';
-import { useTheme, useMediaQuery } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 export default function Chat() {
   const { id: otherUid } = useParams();
