@@ -1,15 +1,18 @@
 import React from 'react';
-import { Box, Typography, Switch, FormControlLabel, Paper } from '@mui/material';
+import { Box, Typography, Switch, FormControlLabel, Paper, Fade, Alert } from '@mui/material';
 
 export default function Settings() {
   // Gestion du thème global via localStorage et event
   const [dark, setDark] = React.useState(() => localStorage.getItem('theme') !== 'light');
+  const [success, setSuccess] = React.useState(false);
 
   const handleThemeChange = () => {
     const newDark = !dark;
     setDark(newDark);
     localStorage.setItem('theme', newDark ? 'dark' : 'light');
     window.dispatchEvent(new Event('themechange'));
+    setSuccess(true);
+    setTimeout(() => setSuccess(false), 1200);
   };
 
   return (
@@ -18,8 +21,9 @@ export default function Settings() {
         <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 700, color: '#4fc3f7', mb: 3 }}>
           Paramètres
         </Typography>
+        {success && <Fade in={success}><Alert severity="success" sx={{ mb: 2 }}>Thème changé !</Alert></Fade>}
         <FormControlLabel
-          control={<Switch checked={dark} onChange={handleThemeChange} color="primary" />}
+          control={<Switch checked={dark} onChange={handleThemeChange} color="primary" sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.08)' } }} />}
           label={dark ? 'Mode sombre activé' : 'Mode clair activé'}
           sx={{ mb: 2, mx: 'auto', display: 'block' }}
         />

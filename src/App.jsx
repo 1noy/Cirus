@@ -12,6 +12,8 @@ import Sidebar from './components/Sidebar';
 import { doc, getDoc } from 'firebase/firestore';
 import Accueil from './components/Accueil';
 import Settings from './components/Settings';
+import Toast from './components/Toast';
+import { createContext } from 'react';
 
 const getTheme = () => {
   const mode = localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
@@ -35,11 +37,18 @@ const getTheme = () => {
   });
 };
 
+export const ToastContext = createContext({ showToast: () => {} });
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [profileComplete, setProfileComplete] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(false);
   const [theme, setTheme] = useState(getTheme());
+  const [toast, setToast] = useState({ open: false, message: '', severity: 'info' });
+  const showToast = (message, severity = 'info', duration = 3000) => {
+    setToast({ open: true, message, severity, duration });
+  };
+  const handleToastClose = () => setToast(t => ({ ...t, open: false }));
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -63,30 +72,33 @@ export default function App() {
   }, []);
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Router>
-        <Routes>
-          {!user && (
-            <Route path="/*" element={<Login />} />
-          )}
-          {user && !profileComplete && !checkingProfile && (
-            <>
-              <Route path="/profil" element={<Profile onComplete={() => setProfileComplete(true)} />} />
-              <Route path="*" element={<Navigate to="/profil" />} />
-            </>
-          )}
-          {user && profileComplete && (
-            <>
-              <Route path="/accueil" element={<Accueil />} />
-              <Route path="/recherche" element={<SearchUser />} />
-              <Route path="/chat/:id" element={<><Sidebar /><Chat /></>} />
-              <Route path="/parametres" element={<Settings />} />
-              <Route path="*" element={<Navigate to="/accueil" />} />
-            </>
-          )}
-        </Routes>
-      </Router>
-    </ThemeProvider>
+    <ToastContext.Provider value={{ showToast }}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Router>
+          <Routes>
+            {!user && (
+              <Route path="/*" element={<Login />} />
+            )}
+            {user && !profileComplete && !checkingProfile && (
+              <>
+                <Route path="/profil" element={<Profile onComplete={() => setProfileComplete(true)} />} />
+                <Route path="*" element={<Navigate to="/profil" />} />
+              </>
+            )}
+            {user && profileComplete && (
+              <>
+                <Route path="/accueil" element={<Accueil />} />
+                <Route path="/recherche" element={<SearchUser />} />
+                <Route path="/chat/:id" element={<><Sidebar /><Chat /></>} />
+                <Route path="/parametres" element={<Settings />} />
+                <Route path="*" element={<Navigate to="/accueil" />} />
+              </>
+            )}
+          </Routes>
+        </Router>
+        <Toast open={toast.open} onClose={handleToastClose} message={toast.message} severity={toast.severity} duration={toast.duration} />
+      </ThemeProvider>
+    </ToastContext.Provider>
   );
 } 
