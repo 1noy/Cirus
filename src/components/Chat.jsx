@@ -1,58 +1,92 @@
 import React, { useEffect, useRef, useState, useContext } from 'react';
-import { useParams } from 'react-router-dom';
-import { db, auth } from '../firebase';
+import { db, auth, storage } from '../firebase';
 import {
-  collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp,
-  doc, getDoc, getDocs, updateDoc, deleteDoc
+  collection, query, orderBy, onSnapshot, addDoc, serverTimestamp,
+  doc, getDoc, updateDoc, deleteDoc
 } from 'firebase/firestore';
 import {
-  Box, Typography, TextField, List, ListItem, Avatar, Paper, InputAdornment,
-  IconButton, Menu, MenuItem, Tooltip, Chip, Fade, Grow, Zoom, Button, CircularProgress
+  Box, Typography, TextField, Avatar, Paper, InputAdornment,
+  IconButton, Divider, Fade, Slide, useMediaQuery, Switch, Menu, MenuItem, Tooltip, Dialog
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import SearchIcon from '@mui/icons-material/Search';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import ReplyIcon from '@mui/icons-material/Reply';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { ToastContext } from '../App';
-import { useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme, ThemeProvider, createTheme } from '@mui/material/styles';
+import Picker from '@emoji-mart/react';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import InsertEmoticonIcon from '@mui/icons-material/InsertEmoticon';
+import GifBoxIcon from '@mui/icons-material/GifBox';
+import ImageIcon from '@mui/icons-material/Image';
+import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
+import CircularProgress from '@mui/material/CircularProgress';
 
-const emojiList = ['🐟','💙','😂','😍','🔥','👍','😮','🥰'];
+function getConvIdForUsers(uid1, uid2) {
+  return [uid1, uid2].sort().join('_');
+}
 
-export default function Chat() {
-  const { id: otherUid } = useParams();
+function formatDate(date) {
+  const now = new Date();
+  const d = date instanceof Date ? date : date.toDate();
+  if (
+    d.getDate() === now.getDate() &&
+    d.getMonth() === now.getMonth() &&
+    d.getFullYear() === now.getFullYear()
+  ) return "Aujourd'hui";
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (
+    d.getDate() === yesterday.getDate() &&
+    d.getMonth() === yesterday.getMonth() &&
+    d.getFullYear() === yesterday.getFullYear()
+  ) return "Hier";
+  return d.toLocaleDateString();
+}
+
+// Ajout d'une fonction pour transformer les liens en <a>
+function linkify(text) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return text.split(urlRegex).map((part, i) =>
+    urlRegex.test(part)
+      ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#4fc3f7', textDecoration: 'underline' }}>{part}</a>
+      : part
+  );
+}
+
+export default function Chat({ otherUid }) {
+  if (!otherUid) return null;
+
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [otherUser, setOtherUser] = useState(null);
   const [convId, setConvId] = useState(null);
-  const [showEmoji, setShowEmoji] = useState(false);
-  const [selectedMsg, setSelectedMsg] = useState(null);
-  const [reaction, setReaction] = useState({});
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [editMsg, setEditMsg] = useState(null);
-  const [editText, setEditText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [search, setSearch] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [attachment, setAttachment] = useState(null);
-  const [uploading, setUploading] = useState(false);
+  const [themeMode, setThemeMode] = useState(() => localStorage.getItem('theme') || 'dark');
   const user = auth.currentUser;
   const messagesEndRef = useRef(null);
   const { showToast } = useContext(ToastContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedMsg, setSelectedMsg] = useState(null);
+  const [editMsg, setEditMsg] = useState(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImg, setLightboxImg] = useState('');
+  const [attachment, setAttachment] = useState(null);
+  const [attachmentPreview, setAttachmentPreview] = useState('');
+  const [showEmoji, setShowEmoji] = useState(false);
+  const emojiList = ['🐟','💙','😂','😍','��','👍','😮','🥰'];
+  // Ajout d'un état pour l'indicateur "en train d'écrire" (simulé)
+  const [otherTyping, setOtherTyping] = useState(false);
+  const [sending, setSending] = useState(false);
 
-  // Simule la présence en ligne
-  function isOnline(uid) {
-    return Math.random() < 0.6;
+  function isOnline(u) {
+    return u && u.uid && (u.uid.charCodeAt(0) % 3 === 0);
   }
 
-  // Récupérer l'utilisateur cible
   useEffect(() => {
     async function fetchUser() {
       const docSnap = await getDoc(doc(db, 'users', otherUid));
@@ -61,38 +95,12 @@ export default function Chat() {
     fetchUser();
   }, [otherUid]);
 
-  // Créer ou récupérer la conversation
   useEffect(() => {
     if (!user || !otherUid) return;
-    async function getOrCreateConv() {
-      const convRef = collection(db, 'conversations');
-      const q = query(convRef, where('members', 'array-contains', user.uid));
-      let found = null;
-      const snap = await getDocs(q);
-      snap.forEach(docu => {
-        const data = docu.data();
-        if (data.members.includes(otherUid)) found = { id: docu.id, ...data };
-      });
-      if (found) {
-        setConvId(found.id);
-      } else {
-        // Créer la conversation
-        const newConv = await addDoc(convRef, {
-          members: [user.uid, otherUid],
-          users: [
-            { uid: user.uid, pseudo: user.displayName || '', photo: user.photoURL || '' },
-            { uid: otherUid, pseudo: otherUser?.pseudo || '', photo: otherUser?.photo || '' }
-          ],
-          createdAt: serverTimestamp()
-        });
-        setConvId(newConv.id);
-      }
-    }
-    getOrCreateConv();
-    // eslint-disable-next-line
-  }, [user, otherUid, otherUser]);
+    const convId = getConvIdForUsers(user.uid, otherUid);
+    setConvId(convId);
+  }, [user, otherUid]);
 
-  // Récupérer les messages en temps réel
   useEffect(() => {
     if (!convId) return;
     const q = query(collection(db, 'conversations', convId, 'messages'), orderBy('createdAt'));
@@ -104,12 +112,10 @@ export default function Chat() {
     return () => unsub();
   }, [convId]);
 
-  // Scroll auto en bas
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Saisie en cours (indicateur)
   useEffect(() => {
     if (!input) {
       setIsTyping(false);
@@ -120,55 +126,105 @@ export default function Chat() {
     return () => clearTimeout(timeout);
   }, [input]);
 
-  // Recherche dans les messages
   useEffect(() => {
-    if (!search) {
-      setSearchResults([]);
-      return;
+    if (attachment) {
+      setAttachmentPreview(URL.createObjectURL(attachment));
+    } else {
+      setAttachmentPreview('');
     }
-    const results = messages.filter(m => m.text && m.text.toLowerCase().includes(search.toLowerCase()));
-    setSearchResults(results.map(r => r.id));
-  }, [search, messages]);
+    return () => {
+      if (attachmentPreview) URL.revokeObjectURL(attachmentPreview);
+    };
+    // eslint-disable-next-line
+  }, [attachment]);
 
-  // Envoi d'un message ou édition
+  // Simule l'indicateur "en train d'écrire" de l'autre utilisateur (pour la démo)
+  useEffect(() => {
+    if (!otherUid) return;
+    // Simule que l'autre écrit de temps en temps
+    const interval = setInterval(() => {
+      setOtherTyping(Math.random() < 0.18);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [otherUid]);
+
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim() && !attachment) return;
-    if (editMsg) {
-      // Edition
-      await updateDoc(doc(db, 'conversations', convId, 'messages', editMsg.id), { text: input, edited: true });
-      setEditMsg(null);
+    if ((!input.trim() && !attachment) || !convId) return;
+    setSending(true);
+    try {
+      let attachmentUrl = '';
+      if (attachment) {
+        const fileRef = ref(storage, `conversations/${convId}/${Date.now()}_${attachment.name}`);
+        await uploadBytes(fileRef, attachment);
+        attachmentUrl = await getDownloadURL(fileRef);
+      }
+      await addDoc(collection(db, 'conversations', convId, 'messages'), {
+        text: input,
+        from: user.uid,
+        to: otherUid,
+        createdAt: serverTimestamp(),
+        pseudo: user.displayName || '',
+        photo: user.photoURL || '',
+        attachment: attachmentUrl
+      });
       setInput('');
-      showToast('Message modifié !', 'success');
-      return;
+      setAttachment(null);
+      setAttachmentPreview('');
+      showToast('Message envoyé !', 'success');
+    } catch (err) {
+      console.error('Erreur lors de l’envoi du message :', err);
+      showToast("Erreur lors de l'envoi du message. Vérifie ta connexion ou les droits Firebase.", 'error');
     }
-    // Envoi
-    let attachmentUrl = '';
-    if (attachment) {
-      setUploading(true);
-      // Ici, tu dois uploader l'image sur ton stockage (Firebase Storage ou autre) et récupérer l'URL
-      // Pour la démo, on simule un upload :
-      await new Promise(r => setTimeout(r, 1200));
-      attachmentUrl = URL.createObjectURL(attachment);
-      setUploading(false);
-    }
-    await addDoc(collection(db, 'conversations', convId, 'messages'), {
-      text: input,
-      from: user.uid,
-      to: otherUid,
-      createdAt: serverTimestamp(),
-      pseudo: user.displayName || '',
-      photo: user.photoURL || '',
-      attachment: attachmentUrl,
-      reactions: {},
-      edited: false
-    });
-    setInput('');
-    setAttachment(null);
-    showToast('Message envoyé !', 'success');
+    setSending(false);
   };
 
-  // Réaction emoji
+  const grouped = messages.reduce((acc, msg) => {
+    const d = msg.createdAt?.toDate ? formatDate(msg.createdAt) : '';
+    if (!acc[d]) acc[d] = [];
+    acc[d].push(msg);
+    return acc;
+  }, {});
+
+  const muiTheme = createTheme({
+    palette: {
+      mode: themeMode,
+      ...(themeMode === 'dark'
+        ? {
+            background: { default: '#181828', paper: '#23233a' },
+            primary: { main: '#4fc3f7' }
+          }
+        : {
+            background: { default: '#f7f9fb', paper: '#fff' },
+            primary: { main: '#1976d2' }
+          }),
+    },
+  });
+
+  const handleThemeToggle = () => {
+    const newMode = themeMode === 'dark' ? 'light' : 'dark';
+    setThemeMode(newMode);
+    localStorage.setItem('theme', newMode);
+  };
+
+  const handleMenu = (event, msg) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedMsg(msg);
+  };
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+    setSelectedMsg(null);
+  };
+  const handleEdit = (msg) => {
+    setEditMsg(msg);
+    setInput(msg.text);
+    handleCloseMenu();
+  };
+  const handleDelete = async (msg) => {
+    await deleteDoc(doc(db, 'conversations', convId, 'messages', msg.id));
+    showToast('Message supprimé', 'info');
+    handleCloseMenu();
+  };
   const handleReaction = async (msg, emoji) => {
     const msgRef = doc(db, 'conversations', convId, 'messages', msg.id);
     const newReactions = { ...(msg.reactions || {}) };
@@ -180,233 +236,279 @@ export default function Chat() {
     }
     await updateDoc(msgRef, { reactions: newReactions });
   };
-
-  // Menu contextuel message
-  const handleMenu = (event, msg) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedMsg(msg);
-  };
-  const handleCloseMenu = () => {
-    setAnchorEl(null);
-    setSelectedMsg(null);
+  const handleImageClick = (url) => {
+    setLightboxImg(url);
+    setLightboxOpen(true);
   };
 
-  // Edition
-  const handleEdit = (msg) => {
-    setEditMsg(msg);
-    setInput(msg.text);
-    handleCloseMenu();
-  };
-
-  // Suppression
-  const handleDelete = async (msg) => {
-    await deleteDoc(doc(db, 'conversations', convId, 'messages', msg.id));
-    showToast('Message supprimé', 'info');
-    handleCloseMenu();
-  };
-
-  // Copier
-  const handleCopy = (msg) => {
-    navigator.clipboard.writeText(msg.text);
-    showToast('Message copié !', 'success');
-    handleCloseMenu();
-  };
-
-  // Répondre (simple, préremplit le champ)
-  const handleReply = (msg) => {
-    setInput(`@${msg.pseudo} ${input}`);
-    handleCloseMenu();
-  };
-
-  // Pièce jointe
-  const handleAttach = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setAttachment(e.target.files[0]);
-    }
+  const handleEmojiSelect = (emoji) => {
+    setInput(input + emoji.native);
+    setShowEmoji(false);
   };
 
   return (
-    <Box sx={{ position: 'relative', minHeight: '100vh', width: '100vw', overflow: 'hidden', bgcolor: '#181828' }}>
-      {/* Header */}
-      <Paper elevation={8} sx={{
-        position: 'sticky', top: 0, left: 0, right: 0, width: '100%', zIndex: 2,
-        bgcolor: '#23233a', p: 2, mb: 2, borderRadius: 0, boxShadow: '0 4px 24px #0006',
-        display: 'flex', alignItems: 'center', gap: 2
-      }}>
-        <Zoom in={true}><Avatar src={otherUser?.photo} sx={{ width: 56, height: 56, mr: 2, border: '2px solid #fff', boxShadow: '0 0 16px #4fc3f7' }} /></Zoom>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: '#4fc3f7', letterSpacing: 1 }}>{otherUser?.pseudo || 'Utilisateur'}</Typography>
-          <Typography variant="body2" sx={{ color: isOnline(otherUser?.uid) ? '#4caf50' : '#bbb', fontWeight: 500 }}>
-            {isOnline(otherUser?.uid) ? 'En ligne' : 'Hors ligne'}
-          </Typography>
-        </Box>
-        <Box flex={1} />
-        <TextField
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Rechercher..."
-          size="small"
-          sx={{ bgcolor: '#181828', borderRadius: 2, minWidth: 120 }}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <SearchIcon />
-              </InputAdornment>
-            )
-          }}
-        />
-      </Paper>
-
-      {/* Liste des messages */}
-      <List sx={{
-        width: '100%', maxWidth: isMobile ? '98vw' : 700, minHeight: 400,
-        maxHeight: isMobile ? '50vh' : '60vh', overflowY: 'auto', bgcolor: 'transparent', mb: 2, px: 0,
-        mx: 'auto'
-      }}>
-        {messages.map((msg, idx) => {
-          const isMine = msg.from === user.uid;
-          const isSearched = searchResults.includes(msg.id);
-          return (
-            <Grow in={true} key={msg.id} timeout={400 + idx * 60}>
-              <ListItem
-                sx={{
-                  justifyContent: isMine ? 'flex-end' : 'flex-start',
-                  display: 'flex', position: 'relative', px: 0, bgcolor: isSearched ? '#4fc3f733' : 'transparent'
-                }}
-                disableGutters
-                onContextMenu={e => { e.preventDefault(); handleMenu(e, msg); }}
-              >
-                {!isMine && (
-                  <Avatar src={msg.photo} sx={{ width: 40, height: 40, mr: 2, border: '2px solid #fff', boxShadow: '0 0 8px #4fc3f7' }} />
-                )}
-                <Paper elevation={6} sx={{
-                  bgcolor: isMine ? 'linear-gradient(90deg,#4fc3f7 80%,#1976d2 100%)' : 'linear-gradient(90deg,#23233a 80%,#1976d2 100%)',
-                  color: isMine ? '#222' : '#fff',
-                  px: 3, py: 2, borderRadius: 4,
-                  maxWidth: 400,
-                  boxShadow: '0 2px 16px #0008',
-                  mb: 1,
-                  ml: isMine ? 8 : 0,
-                  mr: !isMine ? 8 : 0,
-                  fontWeight: 500,
-                  fontSize: 18,
-                  textAlign: isMine ? 'right' : 'left',
-                  position: 'relative',
-                  borderBottom: '4px solid #4fc3f7',
-                  transition: 'background 0.3s',
-                  '&:hover': { boxShadow: '0 0 24px #4fc3f7', transform: 'scale(1.03)' },
-                  outline: isSearched ? '2px solid #ffb300' : 'none'
-                }}>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Typography component="span" sx={{ wordBreak: 'break-word', flex: 1 }}>
-                      {msg.text}
-                      {msg.edited && <Typography variant="caption" color="#bbb" sx={{ ml: 1 }}>(modifié)</Typography>}
-                    </Typography>
-                    {msg.attachment && (
-                      <Box mt={1}>
-                        <img src={msg.attachment} alt="Pièce jointe" style={{ maxWidth: 120, maxHeight: 120, borderRadius: 8, boxShadow: '0 2px 8px #0006' }} />
-                      </Box>
-                    )}
-                  </Box>
-                  <Box display="flex" alignItems="center" justifyContent="space-between" mt={1}>
-                    <Typography variant="caption" sx={{ color: isMine ? '#1976d2' : '#bbb', fontWeight: 400 }}>
-                      {msg.pseudo} • {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString() : ''}
-                    </Typography>
-                    <Box>
-                      {Object.entries(msg.reactions || {}).map(([emoji, arr]) => arr.length > 0 && (
-                        <Chip
-                          key={emoji}
-                          label={`${emoji} ${arr.length}`}
-                          size="small"
-                          sx={{ ml: 0.5, bgcolor: '#fff', color: '#1976d2', fontWeight: 700, fontSize: 18 }}
-                          onClick={() => handleReaction(msg, emoji)}
-                        />
-                      ))}
-                      <Tooltip title="Réagir">
-                        <IconButton size="small" onClick={() => handleReaction(msg, emojiList[0])}>
-                          <EmojiEmotionsIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </Box>
-                </Paper>
-                {isMine && (
-                  <Avatar src={msg.photo} sx={{ width: 40, height: 40, ml: 2, border: '2px solid #fff', boxShadow: '0 0 8px #4fc3f7' }} />
-                )}
-                {/* Menu contextuel */}
-                <Menu
-                  anchorEl={anchorEl}
-                  open={Boolean(anchorEl) && selectedMsg?.id === msg.id}
-                  onClose={handleCloseMenu}
-                  anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                >
-                  {isMine && <MenuItem onClick={() => handleEdit(msg)}><EditIcon fontSize="small" />&nbsp;Éditer</MenuItem>}
-                  {isMine && <MenuItem onClick={() => handleDelete(msg)}><DeleteIcon fontSize="small" />&nbsp;Supprimer</MenuItem>}
-                  <MenuItem onClick={() => handleCopy(msg)}><ContentCopyIcon fontSize="small" />&nbsp;Copier</MenuItem>
-                  <MenuItem onClick={() => handleReply(msg)}><ReplyIcon fontSize="small" />&nbsp;Répondre</MenuItem>
-                </Menu>
-              </ListItem>
-            </Grow>
-          );
-        })}
-        <div ref={messagesEndRef} />
-      </List>
-
-      {/* Indicateur de saisie */}
-      {isTyping && (
-        <Fade in={isTyping}>
-          <Typography variant="body2" align="center" sx={{ color: '#4fc3f7', mb: 1 }}>
-            {user.displayName || 'Vous'} est en train d’écrire...
-          </Typography>
-        </Fade>
-      )}
-
-      {/* Champ de saisie */}
-      <Paper elevation={8} sx={{
-        width: '100%', maxWidth: 700, bgcolor: '#23233a', p: 2, borderRadius: 4,
-        boxShadow: '0 4px 24px #0006', position: 'sticky', bottom: 0, display: 'flex', alignItems: 'center', gap: 2, mx: 'auto'
-      }}>
-        <form onSubmit={handleSend} style={{ display: 'flex', gap: 12, flex: 1 }}>
-          <TextField
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder={editMsg ? 'Modifier le message...' : 'Écris ton message...'}
-            fullWidth
-            sx={{ bgcolor: '#181828', borderRadius: 2 }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton type="submit" color="primary" size="large" disabled={uploading || !input.trim() && !attachment}
-                    sx={{ transition: 'transform 0.2s', '&:hover': { bgcolor: '#4fc3f7', color: '#222', transform: 'scale(1.15)' } }}>
-                    {uploading ? <CircularProgress size={24} /> : <SendIcon />}
-                  </IconButton>
-                </InputAdornment>
-              )
-            }}
-          />
-        </form>
-        <input
-          accept="image/*"
-          style={{ display: 'none' }}
-          id="attach-file"
-          type="file"
-          onChange={handleAttach}
-        />
-        <label htmlFor="attach-file">
-          <IconButton color={attachment ? 'primary' : 'secondary'} component="span" sx={{ mr: 1 }}>
-            <AttachFileIcon />
-          </IconButton>
-        </label>
-        <IconButton color={showEmoji ? 'primary' : 'secondary'} onClick={() => setShowEmoji(e => !e)}>
-          <EmojiEmotionsIcon />
-        </IconButton>
-        {attachment && (
-          <Box ml={2}>
-            <img src={URL.createObjectURL(attachment)} alt="Aperçu" style={{ maxWidth: 60, maxHeight: 60, borderRadius: 8, boxShadow: '0 2px 8px #0006' }} />
+    <ThemeProvider theme={muiTheme}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: muiTheme.palette.background.default, minHeight: 0, height: '100vh', position: 'relative' }}>
+        {/* Badge nom du contact en haut à droite */}
+        {otherUser && (
+          <Box sx={{ position: 'absolute', top: 18, right: 24, zIndex: 30 }}>
+            <Typography
+              variant="body1"
+              sx={{
+                bgcolor: muiTheme.palette.primary.main,
+                color: '#fff',
+                px: 2,
+                py: 0.5,
+                borderRadius: 3,
+                fontWeight: 700,
+                boxShadow: '0 2px 8px #1976d2',
+                fontSize: 16,
+                letterSpacing: 1,
+                opacity: 0.92
+              }}
+            >
+              {otherUser.pseudo || otherUser.email || 'Utilisateur'}
+            </Typography>
           </Box>
         )}
-      </Paper>
+        {/* Header */}
+        <Paper elevation={8} sx={{
+          position: 'sticky', top: 0, left: 0, right: 0, width: '100%', zIndex: 2,
+          bgcolor: muiTheme.palette.background.paper, p: 2, mb: 2, borderRadius: 0, boxShadow: '0 4px 24px #0006',
+          display: 'flex', alignItems: 'center', gap: 2
+        }}>
+          <Avatar src={otherUser?.photo} sx={{ width: 48, height: 48, mr: 1, border: '2px solid #4fc3f7' }} />
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: muiTheme.palette.primary.main, letterSpacing: 1 }}>
+              {otherUser?.pseudo || otherUser?.email || 'Utilisateur'}
+            </Typography>
+            {isOnline(otherUser) && (
+              <Typography variant="body2" sx={{ color: '#4caf50', fontWeight: 500 }}>
+                En ligne
+              </Typography>
+            )}
+          </Box>
+          <Box flex={1} />
+          <Switch checked={themeMode === 'dark'} onChange={handleThemeToggle} />
+        </Paper>
+
+        {/* Liste des messages */}
+        <Box sx={{
+          flex: 1,
+          overflowY: 'auto',
+          px: isMobile ? 1 : 6,
+          py: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.5,
+          position: 'relative',
+        }}>
+          {Object.entries(grouped).map(([date, msgs]) => (
+            <React.Fragment key={date}>
+              <Box sx={{ display: 'flex', alignItems: 'center', my: 2 }}>
+                <Divider sx={{ flex: 1, bgcolor: muiTheme.palette.primary.main, opacity: 0.15 }} />
+                <Typography sx={{ mx: 2, color: muiTheme.palette.primary.main, fontWeight: 700 }}>{date}</Typography>
+                <Divider sx={{ flex: 1, bgcolor: muiTheme.palette.primary.main, opacity: 0.15 }} />
+              </Box>
+              {msgs.map((msg, idx) => {
+                const isMine = msg.from === user.uid;
+                // Simule l'accusé de lecture (pour la démo)
+                const status = isMine ? (msg.read ? 'vu' : 'envoyé') : '';
+                return (
+                  <Slide direction={isMine ? "left" : "right"} in={true} mountOnEnter unmountOnExit key={msg.id}>
+                    <Fade in={true} timeout={400 + idx * 60}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: isMine ? 'flex-end' : 'flex-start',
+                          alignItems: 'flex-end',
+                          mb: 0.5
+                        }}
+                      >
+                        {!isMine && (
+                          <Avatar src={msg.photo} sx={{ width: 32, height: 32, mr: 1 }} />
+                        )}
+                        <Paper
+                          elevation={6}
+                          sx={{
+                            bgcolor: isMine
+                              ? muiTheme.palette.mode === 'dark'
+                                ? 'linear-gradient(90deg,#4fc3f7 80%,#1976d2 100%)'
+                                : 'linear-gradient(90deg,#1976d2 80%,#4fc3f7 100%)'
+                              : muiTheme.palette.background.paper,
+                            color: isMine ? '#222' : muiTheme.palette.text.primary,
+                            px: 2,
+                            py: 1.2,
+                            borderRadius: 3,
+                            maxWidth: 320,
+                            minWidth: 40,
+                            boxShadow: isMine ? '0 2px 8px #4fc3f7aa' : '0 2px 8px #23233a88',
+                            fontSize: 16,
+                  fontWeight: 500,
+                            textAlign: 'left',
+                            wordBreak: 'break-word',
+                  position: 'relative',
+                            transition: 'background 0.2s',
+                            borderBottomRightRadius: isMine ? 8 : 24,
+                            borderBottomLeftRadius: isMine ? 24 : 8,
+                            cursor: 'pointer'
+                          }}
+                          onContextMenu={e => { e.preventDefault(); handleMenu(e, msg); }}
+                        >
+                          {/* Saisie enrichie : liens cliquables */}
+                          {linkify(msg.text)}
+                          {msg.attachment && (
+                            <Box mt={1} onClick={() => handleImageClick(msg.attachment)} sx={{ cursor: 'pointer' }}>
+                              <img src={msg.attachment} alt="Pièce jointe" style={{ maxWidth: 120, maxHeight: 120, borderRadius: 8, boxShadow: '0 2px 8px #0006' }} />
+                    </Box>
+                  )}
+                          {/* Réactions emoji */}
+                          <Box>
+                            {Object.entries(msg.reactions || {}).map(([emoji, arr]) => arr.length > 0 && (
+                              <Tooltip title="Réagir" key={emoji}>
+                                <IconButton size="small" onClick={() => handleReaction(msg, emoji)}>
+                                  {emoji} {arr.length}
+                                </IconButton>
+                              </Tooltip>
+                            ))}
+                            <Tooltip title="Réagir">
+                              <IconButton size="small" onClick={() => handleReaction(msg, emojiList[0])}>
+                                <EmojiEmotionsIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                          {/* Accusé de lecture (envoyé/vu) */}
+                          {isMine && (
+                            <Typography sx={{ position: 'absolute', bottom: 2, right: 10, fontSize: 11, color: '#4fc3f7', fontWeight: 700, opacity: 0.7 }}>
+                              {status}
+                            </Typography>
+                          )}
+                          {/* Menu contextuel */}
+                          <Menu
+                            anchorEl={anchorEl}
+                            open={Boolean(anchorEl) && selectedMsg?.id === msg.id}
+                            onClose={handleCloseMenu}
+                            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                          >
+                            <MenuItem onClick={() => handleEdit(msg)}><EditIcon fontSize="small" />&nbsp;Éditer</MenuItem>
+                            <MenuItem onClick={() => handleDelete(msg)}><DeleteIcon fontSize="small" />&nbsp;Supprimer</MenuItem>
+                          </Menu>
+                </Paper>
+                        {isMine && (
+                          <Avatar src={msg.photo} sx={{ width: 32, height: 32, ml: 1 }} />
+                        )}
+                      </Box>
+                    </Fade>
+                  </Slide>
+                );
+              })}
+            </React.Fragment>
+          ))}
+          <div ref={messagesEndRef} />
+        </Box>
+
+        {/* Indicateur "en train d'écrire" de l'autre utilisateur */}
+        {otherTyping && (
+          <Fade in={otherTyping}>
+            <Typography variant="body2" align="center" sx={{ color: muiTheme.palette.primary.main, mb: 1 }}>
+              {otherUser?.pseudo || 'L’utilisateur'} est en train d’écrire...
+            </Typography>
+          </Fade>
+        )}
+        {/* Statut “en train d’écrire…” de moi */}
+        {isTyping && (
+          <Fade in={isTyping}>
+            <Typography variant="body2" align="center" sx={{ color: muiTheme.palette.primary.main, mb: 1 }}>
+              {user.displayName || 'Vous'} est en train d’écrire...
+            </Typography>
+          </Fade>
+        )}
+
+        {/* Barre d’outils flottante */}
+        <Paper elevation={8} sx={{
+          width: '100%',
+          maxWidth: 700,
+          bgcolor: muiTheme.palette.background.paper,
+          p: 2,
+          borderRadius: 4,
+          boxShadow: '0 4px 24px #0006',
+          position: 'sticky',
+          bottom: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          mx: 'auto',
+          zIndex: 5
+        }}>
+          <form onSubmit={handleSend} style={{ display: 'flex', gap: 12, flex: 1 }}>
+            {/* Barre d’outils flottante */}
+            <IconButton onClick={() => setShowEmoji(v => !v)} title="Emoji" aria-label="Ouvrir le picker emoji">
+              <InsertEmoticonIcon />
+            </IconButton>
+            <IconButton component="label" title="Image" aria-label="Attacher une image">
+              <input
+                accept="image/*"
+                style={{ display: 'none' }}
+                type="file"
+                onChange={e => {
+                  if (e.target.files && e.target.files[0]) setAttachment(e.target.files[0]);
+                }}
+              />
+              <ImageIcon />
+            </IconButton>
+            <IconButton disabled title="GIF (à venir)" aria-label="GIF (à venir)"><GifBoxIcon /></IconButton>
+            <IconButton disabled title="Sticker (à venir)" aria-label="Sticker (à venir)"><EmojiEmotionsIcon /></IconButton>
+            <IconButton disabled title="Mention (à venir)" aria-label="Mention (à venir)"><AlternateEmailIcon /></IconButton>
+            {/* Saisie texte */}
+            <TextField
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              placeholder="Écris ton message..."
+              fullWidth
+              sx={{ bgcolor: muiTheme.palette.mode === 'dark' ? '#181828' : '#f7f9fb', borderRadius: 2 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton type="submit" color="primary" size="large" aria-label="Envoyer le message" disabled={sending}>
+                      {sending ? <CircularProgress size={24} color="inherit" /> : <SendIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+              disabled={sending}
+            />
+          </form>
+          {/* Aperçu image avant envoi */}
+          {attachmentPreview && (
+            <Box ml={2}>
+              <img src={attachmentPreview} alt="Aperçu" style={{ maxWidth: 60, maxHeight: 60, borderRadius: 8, boxShadow: '0 2px 8px #0006' }} />
+            </Box>
+          )}
+          {/* Affiche un état "Envoi en cours..." */}
+          {sending && (
+            <Typography align="center" sx={{ color: '#4fc3f7', fontWeight: 700, mt: 1 }}>Envoi en cours...</Typography>
+          )}
+        </Paper>
+        {/* Picker emoji */}
+        {showEmoji && (
+          <Box sx={{ position: 'absolute', bottom: 90, left: 20, zIndex: 100 }}>
+            <Picker
+              theme={themeMode}
+              onEmojiSelect={handleEmojiSelect}
+              previewPosition="none"
+              skinTonePosition="none"
+            />
+          </Box>
+        )}
+      </Box>
+      {lightboxOpen && (
+        <Dialog open={lightboxOpen} onClose={() => setLightboxOpen(false)} maxWidth="md">
+          <Box sx={{ p: 2, bgcolor: '#181828' }}>
+            <img src={lightboxImg} alt="Aperçu" style={{ maxWidth: '90vw', maxHeight: '80vh', borderRadius: 8 }} />
     </Box>
+        </Dialog>
+      )}
+    </ThemeProvider>
   );
 } 

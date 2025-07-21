@@ -1,309 +1,177 @@
 import React, { useEffect, useRef, useState, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import Sidebar from './Sidebar';
+import Chat from './Chat';
+import MenuIcon from '@mui/icons-material/Menu';
 import { db, auth } from '../firebase';
 import {
-  collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp,
-  doc, getDoc
+  collection, query, orderBy, onSnapshot, addDoc, serverTimestamp,
+  doc, getDoc, updateDoc, deleteDoc
 } from 'firebase/firestore';
 import {
-  Box, Typography, TextField, List, ListItem, Avatar, Paper, InputAdornment,
-  IconButton, Divider, Fade, Slide, useMediaQuery, Switch
+  Box, Typography, TextField, Avatar, Paper, InputAdornment,
+  IconButton, Divider, Fade, Slide, useMediaQuery, Switch, Menu, MenuItem, Tooltip
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
+import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import Dialog from '@mui/material/Dialog';
 import { ToastContext } from '../App';
 import { useTheme, ThemeProvider, createTheme } from '@mui/material/styles';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import Picker from '@emoji-mart/react';
+import SearchUser from './SearchUser';
+import CloseIcon from '@mui/icons-material/Close';
+import SettingsIcon from '@mui/icons-material/Settings';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
-function getConvIdForUsers(uid1, uid2) {
-  return [uid1, uid2].sort().join('_');
-}
+export default function Messenger() {
+  const [selectedUid, setSelectedUid] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
-function formatDate(date) {
-  const now = new Date();
-  const d = date instanceof Date ? date : date.toDate();
-  if (
-    d.getDate() === now.getDate() &&
-    d.getMonth() === now.getMonth() &&
-    d.getFullYear() === now.getFullYear()
-  ) return "Aujourd'hui";
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  if (
-    d.getDate() === yesterday.getDate() &&
-    d.getMonth() === yesterday.getMonth() &&
-    d.getFullYear() === yesterday.getFullYear()
-  ) return "Hier";
-  return d.toLocaleDateString();
-}
-
-export default function Chat() {
-  const { id: otherUid } = useParams();
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [otherUser, setOtherUser] = useState(null);
-  const [convId, setConvId] = useState(null);
-  const [isTyping, setIsTyping] = useState(false);
-  const [themeMode, setThemeMode] = useState(() => localStorage.getItem('theme') || 'dark');
-  const user = auth.currentUser;
-  const messagesEndRef = useRef(null);
-  const { showToast } = useContext(ToastContext);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  // Simule la présence en ligne
-  function isOnline(u) {
-    return u && u.uid && (u.uid.charCodeAt(0) % 3 === 0);
-  }
-
-  // Récupérer l'utilisateur cible
-  useEffect(() => {
-    async function fetchUser() {
-      const docSnap = await getDoc(doc(db, 'users', otherUid));
-      setOtherUser(docSnap.exists() ? docSnap.data() : null);
-    }
-    fetchUser();
-  }, [otherUid]);
-
-  // Créer ou récupérer la conversation FIABLEMENT
-  useEffect(() => {
-    if (!user || !otherUid) return;
-    async function getOrCreateConv() {
-      const convId = getConvIdForUsers(user.uid, otherUid);
-      setConvId(convId);
-    }
-    getOrCreateConv();
-  }, [user, otherUid, otherUser]);
-
-  // Récupérer les messages en temps réel
-  useEffect(() => {
-    if (!convId) return;
-    const q = query(collection(db, 'conversations', convId, 'messages'), orderBy('createdAt'));
-    const unsub = onSnapshot(q, (snap) => {
-      const msgs = [];
-      snap.forEach(doc => msgs.push({ id: doc.id, ...doc.data() }));
-      setMessages(msgs);
-    });
-    return () => unsub();
-  }, [convId]);
-
-  // Scroll auto en bas
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // Saisie en cours (statut “en train d’écrire…”)
-  useEffect(() => {
-    if (!input) {
-      setIsTyping(false);
-      return;
-    }
-    setIsTyping(true);
-    const timeout = setTimeout(() => setIsTyping(false), 2000);
-    return () => clearTimeout(timeout);
-  }, [input]);
-
-  // Envoi d'un message
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || !convId) return;
-    await addDoc(collection(db, 'conversations', convId, 'messages'), {
-      text: input,
-      from: user.uid,
-      to: otherUid,
-      createdAt: serverTimestamp(),
-      pseudo: user.displayName || '',
-      photo: user.photoURL || ''
-    });
-    setInput('');
-    showToast('Message envoyé !', 'success');
-  };
-
-  // Regroupement des messages par date
-  const grouped = messages.reduce((acc, msg) => {
-    const d = msg.createdAt?.toDate ? formatDate(msg.createdAt) : '';
-    if (!acc[d]) acc[d] = [];
-    acc[d].push(msg);
-    return acc;
-  }, {});
-
-  // Thème sombre/clair
-  const muiTheme = createTheme({
-    palette: {
-      mode: themeMode,
-      ...(themeMode === 'dark'
-        ? {
-            background: { default: '#181828', paper: '#23233a' },
-            primary: { main: '#4fc3f7' }
-          }
-        : {
-            background: { default: '#f7f9fb', paper: '#fff' },
-            primary: { main: '#1976d2' }
-          }),
-    },
-  });
-
-  const handleThemeToggle = () => {
-    const newMode = themeMode === 'dark' ? 'light' : 'dark';
-    setThemeMode(newMode);
-    localStorage.setItem('theme', newMode);
-  };
+  const handleToggleSidebar = () => setSidebarOpen(open => !open);
 
   return (
-    <ThemeProvider theme={muiTheme}>
-      <Box sx={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        bgcolor: muiTheme.palette.background.default,
-        minHeight: 0,
-        height: '100vh'
-      }}>
-        {/* Header */}
-        <Paper elevation={8} sx={{
-          position: 'sticky', top: 0, left: 0, right: 0, width: '100%', zIndex: 2,
-          bgcolor: muiTheme.palette.background.paper, p: 2, mb: 2, borderRadius: 0, boxShadow: '0 4px 24px #0006',
-          display: 'flex', alignItems: 'center', gap: 2
-        }}>
-          <Avatar src={otherUser?.photo} sx={{ width: 48, height: 48, mr: 1, border: '2px solid #4fc3f7' }} />
-          <Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: muiTheme.palette.primary.main, letterSpacing: 1 }}>
-              {otherUser?.pseudo || otherUser?.email || 'Utilisateur'}
-            </Typography>
-            {isOnline(otherUser) && (
-              <Typography variant="body2" sx={{ color: '#4caf50', fontWeight: 500 }}>
-                En ligne
-              </Typography>
-            )}
-          </Box>
-          <Box flex={1} />
-          <Switch checked={themeMode === 'dark'} onChange={handleThemeToggle} />
-        </Paper>
-
-        {/* Liste des messages */}
-        <Box sx={{
-          flex: 1,
-          overflowY: 'auto',
-          px: isMobile ? 1 : 6,
-          py: 3,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 0.5
-        }}>
-          {Object.entries(grouped).map(([date, msgs]) => (
-            <React.Fragment key={date}>
-              <Box sx={{ display: 'flex', alignItems: 'center', my: 2 }}>
-                <Divider sx={{ flex: 1, bgcolor: muiTheme.palette.primary.main, opacity: 0.15 }} />
-                <Typography sx={{ mx: 2, color: muiTheme.palette.primary.main, fontWeight: 700 }}>{date}</Typography>
-                <Divider sx={{ flex: 1, bgcolor: muiTheme.palette.primary.main, opacity: 0.15 }} />
-              </Box>
-              {msgs.map((msg, idx) => {
-                const isMine = msg.from === user.uid;
-                return (
-                  <Slide direction={isMine ? "left" : "right"} in={true} mountOnEnter unmountOnExit key={msg.id}>
-                    <Fade in={true} timeout={400 + idx * 60}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: isMine ? 'flex-end' : 'flex-start',
-                          alignItems: 'flex-end',
-                          mb: 0.5
-                        }}
-                      >
-                        {!isMine && (
-                          <Avatar src={msg.photo} sx={{ width: 32, height: 32, mr: 1 }} />
-                        )}
-                        <Paper
-                          elevation={6}
-                          sx={{
-                            bgcolor: isMine
-                              ? muiTheme.palette.mode === 'dark'
-                                ? 'linear-gradient(90deg,#4fc3f7 80%,#1976d2 100%)'
-                                : 'linear-gradient(90deg,#1976d2 80%,#4fc3f7 100%)'
-                              : muiTheme.palette.background.paper,
-                            color: isMine ? '#222' : muiTheme.palette.text.primary,
-                            px: 2,
-                            py: 1.2,
-                            borderRadius: 3,
-                            maxWidth: 320,
-                            minWidth: 40,
-                            boxShadow: isMine ? '0 2px 8px #4fc3f7aa' : '0 2px 8px #23233a88',
-                            fontSize: 16,
-                            fontWeight: 500,
-                            textAlign: 'left',
-                            wordBreak: 'break-word',
-                            position: 'relative',
-                            transition: 'background 0.2s',
-                            borderBottomRightRadius: isMine ? 8 : 24,
-                            borderBottomLeftRadius: isMine ? 24 : 8,
-                          }}
-                        >
-                          {msg.text}
-                          <Typography variant="caption" sx={{
-                            display: 'block',
-                            color: isMine ? '#1976d2' : '#bbb',
-                            mt: 0.5,
-                            textAlign: 'right'
-                          }}>
-                            {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                          </Typography>
-                        </Paper>
-                        {isMine && (
-                          <Avatar src={msg.photo} sx={{ width: 32, height: 32, ml: 1 }} />
-                        )}
-                      </Box>
-                    </Fade>
-                  </Slide>
-                );
-              })}
-            </React.Fragment>
-          ))}
-          <div ref={messagesEndRef} />
-        </Box>
-
-        {/* Statut “en train d’écrire…” */}
-        {isTyping && (
-          <Fade in={isTyping}>
-            <Typography variant="body2" align="center" sx={{ color: muiTheme.palette.primary.main, mb: 1 }}>
-              {user.displayName || 'Vous'} est en train d’écrire...
-            </Typography>
-          </Fade>
-        )}
-
-        {/* Champ de saisie */}
-        <Paper elevation={8} sx={{
-          width: '100%',
-          maxWidth: 700,
-          bgcolor: muiTheme.palette.background.paper,
-          p: 2,
-          borderRadius: 4,
-          boxShadow: '0 4px 24px #0006',
-          position: 'sticky',
-          bottom: 0,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-          mx: 'auto'
-        }}>
-          <form onSubmit={handleSend} style={{ display: 'flex', gap: 12, flex: 1 }}>
-            <TextField
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              placeholder="Écris ton message..."
-              fullWidth
-              sx={{ bgcolor: muiTheme.palette.mode === 'dark' ? '#181828' : '#f7f9fb', borderRadius: 2 }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton type="submit" color="primary" size="large"
-                      sx={{ transition: 'transform 0.2s', '&:hover': { bgcolor: '#4fc3f7', color: '#222', transform: 'scale(1.15)' } }}>
-                      <SendIcon />
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }}
-            />
-          </form>
-        </Paper>
+    <Box sx={{ position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', bgcolor: '#181828' }}>
+      {/* Fond animé SVG */}
+      <Box sx={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+        <svg width="100%" height="100%" viewBox="0 0 1920 1080" style={{ position: 'absolute', width: '100%', height: '100%' }}>
+          <defs>
+            <radialGradient id="bubbleGradient" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#4fc3f7" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#181828" stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id="waveGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#1976d2" stopOpacity="0.18" />
+              <stop offset="100%" stopColor="#181828" stopOpacity="0.7" />
+            </linearGradient>
+            <filter id="blur" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="18" />
+            </filter>
+          </defs>
+        {/* Bulles animées */}
+          <circle cx="300" cy="900" r="60" fill="url(#bubbleGradient)">
+            <animate attributeName="cy" values="900;200;900" dur="12s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="1600" cy="1000" r="40" fill="url(#bubbleGradient)">
+            <animate attributeName="cy" values="1000;300;1000" dur="16s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="900" cy="1100" r="80" fill="url(#bubbleGradient)">
+            <animate attributeName="cy" values="1100;100;1100" dur="20s" repeatCount="indefinite" />
+            </circle>
+          {/* Vagues */}
+          <path d="M0,900 Q480,850 960,900 T1920,900 V1080 H0Z" fill="url(#waveGradient)" filter="url(#blur)">
+            <animate attributeName="d" values="M0,900 Q480,850 960,900 T1920,900 V1080 H0Z;M0,910 Q480,870 960,910 T1920,910 V1080 H0Z;M0,900 Q480,850 960,900 T1920,900 V1080 H0Z" dur="8s" repeatCount="indefinite" />
+          </path>
+          {/* Lumière sous-marine */}
+          <ellipse cx="960" cy="200" rx="700" ry="120" fill="#fff" opacity="0.08">
+            <animate attributeName="opacity" values="0.08;0.18;0.08" dur="7s" repeatCount="indefinite" />
+          </ellipse>
+          </svg>
       </Box>
-    </ThemeProvider>
+      {/* Header Messenger sticky */}
+      <Box sx={{ position: 'sticky', top: 0, zIndex: 10, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: { xs: 2, md: 6 }, py: 2, bgcolor: 'rgba(24,24,40,0.92)', boxShadow: '0 4px 24px #0006', borderBottom: '2px solid #1976d2', backdropFilter: 'blur(8px)' }}>
+        {/* Logo animé */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ width: 54, height: 54, position: 'relative', mr: 2 }}>
+            <svg width="54" height="54" viewBox="0 0 54 54">
+              <circle cx="27" cy="27" r="26" fill="#23233a" stroke="#4fc3f7" strokeWidth="2" />
+              <circle cx="27" cy="27" r="24" fill="url(#bubbleGradient)" opacity="0.7" />
+              <text x="50%" y="54%" textAnchor="middle" fontSize="32" fontWeight="bold" fill="#4fc3f7" fontFamily="Arial" dy="0.1em">C</text>
+              <animateTransform attributeName="transform" type="rotate" from="0 27 27" to="360 27 27" dur="12s" repeatCount="indefinite" />
+            </svg>
+            {/* Reflet */}
+            <svg width="54" height="54" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
+              <ellipse cx="27" cy="18" rx="12" ry="4" fill="#fff" opacity="0.18">
+                <animate attributeName="opacity" values="0.18;0.32;0.18" dur="4s" repeatCount="indefinite" />
+                  </ellipse>
+              </svg>
+            </Box>
+          <Typography variant="h5" sx={{ fontWeight: 900, color: '#4fc3f7', letterSpacing: 2, textShadow: '0 2px 12px #1976d2cc', fontSize: { xs: 22, md: 28 } }}>
+            Chat-changing
+        </Typography>
+        </Box>
+        {/* Actions rapides */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton onClick={() => setSearchOpen(true)} sx={{ color: '#4fc3f7' }} title="Rechercher un utilisateur">
+            <MenuIcon />
+          </IconButton>
+          <IconButton onClick={() => setProfileOpen(true)} sx={{ color: '#4fc3f7' }} title="Mon profil">
+            <AccountCircleIcon />
+          </IconButton>
+          <IconButton onClick={() => setSettingsOpen(true)} sx={{ color: '#4fc3f7' }} title="Paramètres">
+            <SettingsIcon />
+          </IconButton>
+        </Box>
+      </Box>
+      {/* Layout principal (sidebar + chat) */}
+      <Box sx={{ display: 'flex', height: 'calc(100vh - 80px)', width: '100%', position: 'relative', zIndex: 2 }}>
+        <Sidebar
+          onSelect={uid => {
+            setSelectedUid(uid);
+            setSidebarOpen(false);
+          }}
+          selectedUid={selectedUid}
+          open={sidebarOpen}
+          onToggle={handleToggleSidebar}
+        />
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative' }}>
+          {/* Bouton burger sur mobile */}
+          <IconButton
+            onClick={handleToggleSidebar}
+            sx={{
+              position: 'absolute',
+              top: 16,
+              left: 16,
+              zIndex: 20,
+              display: { xs: 'block', md: 'none' }
+            }}
+          >
+            <MenuIcon sx={{ color: '#4fc3f7', fontSize: 32 }} />
+          </IconButton>
+          {selectedUid ? (
+            <Chat otherUid={selectedUid} />
+          ) : (
+            <Box flex={1} display="flex" alignItems="center" justifyContent="center">
+              <Typography variant="h5" color="#4fc3f7" sx={{ opacity: 0.7 }}>
+                Sélectionne un contact pour commencer à discuter
+        </Typography>
+            </Box>
+          )}
+        </Box>
+      </Box>
+      {/* Modales : recherche, profil, paramètres */}
+      <Dialog open={searchOpen} onClose={() => setSearchOpen(false)} maxWidth="sm" fullWidth>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, borderBottom: '1px solid #333', bgcolor: '#23233a' }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: '#4fc3f7', letterSpacing: 1 }}>
+            Recherche d'utilisateur
+          </Typography>
+          <IconButton onClick={() => setSearchOpen(false)} sx={{ color: '#4fc3f7' }}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <Box sx={{ bgcolor: '#181828', p: 2 }}>
+          <SearchUser />
+        </Box>
+      </Dialog>
+      <Dialog open={profileOpen} onClose={() => setProfileOpen(false)} maxWidth="xs" fullWidth>
+        <Box sx={{ p: 3, bgcolor: '#181828' }}>
+          {/* Ici tu pourras intégrer le composant Profile amélioré */}
+          <Typography variant="h6" sx={{ color: '#4fc3f7', fontWeight: 800, mb: 2 }}>Mon profil</Typography>
+          <Typography color="#fff">(À venir : édition avancée du profil)</Typography>
+        </Box>
+      </Dialog>
+      <Dialog open={settingsOpen} onClose={() => setSettingsOpen(false)} maxWidth="xs" fullWidth>
+        <Box sx={{ p: 3, bgcolor: '#181828' }}>
+          {/* Ici tu pourras intégrer le composant Settings amélioré */}
+          <Typography variant="h6" sx={{ color: '#4fc3f7', fontWeight: 800, mb: 2 }}>Paramètres</Typography>
+          <Typography color="#fff">(À venir : paramètres avancés, accessibilité, thème...)</Typography>
+        </Box>
+      </Dialog>
+    </Box>
   );
 } 

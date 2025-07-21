@@ -1,9 +1,10 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { db, auth } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { Box, Typography, TextField, Button, List, ListItem, ListItemAvatar, Avatar, ListItemText, Alert, Paper, CircularProgress, Fade } from '@mui/material';
+import { Box, Typography, TextField, Button, List, ListItem, ListItemAvatar, Avatar, ListItemText, Alert, Paper, CircularProgress, Fade, Chip, Slide, Tooltip, IconButton } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { ToastContext } from '../App';
 
 export default function SearchUser() {
@@ -12,81 +13,178 @@ export default function SearchUser() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { showToast } = useContext(ToastContext);
+  const [instant, setInstant] = useState(false);
+  const [suggestions, setSuggestions] = useState([]); // Pour la suite
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    setResults([]);
-    try {
-      const q = query(collection(db, 'users'), where('pseudo', '>=', search), where('pseudo', '<=', search + '\uf8ff'));
-      const snap = await getDocs(q);
-      const users = [];
-      snap.forEach(doc => {
-        if (doc.id !== auth.currentUser.uid) {
-          users.push(doc.data());
-        }
-      });
-      setResults(users);
-      if (users.length === 0) {
-        setError('Aucun utilisateur trouvé.');
-        showToast('Aucun utilisateur trouvé.', 'warning');
-      } else {
-        showToast('Résultats trouvés !', 'success');
-      }
-    } catch (e) {
-      setError("Erreur lors de la recherche.");
-      showToast('Erreur lors de la recherche.', 'error');
+  // Recherche instantanée dès la saisie
+  useEffect(() => {
+    if (search.length < 2) {
+      setResults([]);
+      setError('');
+      return;
     }
-    setLoading(false);
-  };
+    let active = true;
+    setLoading(true);
+    setInstant(true);
+    (async () => {
+      try {
+        const q = query(collection(db, 'users'), where('pseudo', '>=', search), where('pseudo', '<=', search + '\uf8ff'));
+        const snap = await getDocs(q);
+        if (!active) return;
+        const arr = [];
+        snap.forEach(doc => arr.push(doc.data()));
+        setResults(arr);
+        setError(arr.length === 0 ? 'Aucun utilisateur trouvé.' : '');
+      } catch (e) {
+        setError("Erreur lors de la recherche.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [search]);
+
+  // Suggestions intelligentes simulées (populaires/récents)
+  useEffect(() => {
+    // Simule des suggestions (à remplacer par Firestore)
+    setSuggestions([
+      { uid: 'pop1', pseudo: 'AquaStar', bio: 'Fan d’aquariums', photo: '', isNew: true },
+      { uid: 'pop2', pseudo: 'BlueFish', bio: 'Toujours en ligne', photo: '', isNew: false }
+    ]);
+  }, []);
 
   const handleStartChat = (user) => {
+    // Démarre une conversation instantanément (à adapter selon l’architecture Messenger)
     window.location.href = `/chat/${user.uid}`;
   };
-
-  // Simulation présence en ligne (à remplacer par une vraie logique temps réel)
   function isOnline(uid) {
-    // Pour la démo, 60% de chances d'être en ligne
-    return Math.random() < 0.6;
+    // TODO: remplacer par vrai statut en ligne
+    return uid && uid.charCodeAt(0) % 3 === 0;
   }
 
   return (
     <Box minHeight="100vh" bgcolor="#181828" display="flex" flexDirection="column" alignItems="center" justifyContent="center">
-      <Paper elevation={8} sx={{ bgcolor: '#23233a', p: 5, borderRadius: 5, minWidth: 380, maxWidth: 420, boxShadow: '0 8px 32px #0008' }}>
-        <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 700, color: '#4fc3f7', mb: 3 }}>
+      <Paper elevation={8} sx={{ bgcolor: '#23233a', p: 5, borderRadius: 5, minWidth: 340, maxWidth: 420, boxShadow: '0 8px 32px #0008' }}>
+        <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 700, color: '#4fc3f7', mb: 3, letterSpacing: 1 }}>
           Recherche d'utilisateur
         </Typography>
-        <form onSubmit={handleSearch} style={{ marginBottom: 24, display: 'flex', gap: 12 }}>
+        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
           <TextField
-            label="Pseudo de l'utilisateur"
             value={search}
             onChange={e => setSearch(e.target.value)}
+            placeholder="Tape un pseudo..."
             fullWidth
-            required
-            sx={{ bgcolor: '#181828', borderRadius: 2 }}
+            size="medium"
+            sx={{ bgcolor: '#181828', borderRadius: 2, input: { color: '#fff', fontWeight: 600 } }}
+            InputProps={{
+              startAdornment: <SearchIcon sx={{ color: '#4fc3f7', mr: 1 }} />
+            }}
             autoFocus
+            inputProps={{ 'aria-label': 'Recherche utilisateur' }}
           />
-          <Button type="submit" variant="contained" color="primary" size="large" sx={{ minWidth: 56, height: 56, borderRadius: 2, boxShadow: 2, transition: 'transform 0.2s', fontWeight: 700, fontSize: 18, '&:hover': { bgcolor: '#1976d2', transform: 'scale(1.08)' } }}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : <SearchIcon fontSize="large" />}
-          </Button>
-        </form>
-        {error && <Alert severity="warning" sx={{ mb: 2, fontWeight: 600, fontSize: 16 }}>{error}</Alert>}
-        {results.length > 0 && <Fade in={results.length > 0}><Alert severity="success" sx={{ mb: 2, fontWeight: 600, fontSize: 16 }}>Résultats trouvés !</Alert></Fade>}
+        </Box>
+        {error && <Alert severity="warning" sx={{ mb: 2, bgcolor: '#1976d2', color: '#fff', fontWeight: 700 }}>{error}</Alert>}
+        {loading && <Box display="flex" justifyContent="center" my={2}><CircularProgress size={32} color="info" /></Box>}
+        {/* Suggestions intelligentes */}
+        {suggestions.length > 0 && (
+          <Box mb={2}>
+            <Typography variant="subtitle2" sx={{ color: '#4fc3f7', fontWeight: 700, mb: 1 }}>Suggestions</Typography>
+            <List>
+              {suggestions.map((user, idx) => (
+                <Slide direction="up" in={true} mountOnEnter unmountOnExit key={user.uid} timeout={350 + idx * 30}>
+                  <Fade in={true} timeout={400 + idx * 40}>
+                    <ListItem button onClick={() => handleStartChat(user)} sx={{
+                      mb: 1.5,
+                      borderRadius: 3,
+                      bgcolor: '#1e1e2f',
+                      color: '#fff',
+                      boxShadow: '0 2px 8px #0004',
+                      minHeight: 56,
+                      px: 1.5,
+                      transition: 'background 0.2s, box-shadow 0.2s',
+                      '&:hover': {
+                        bgcolor: '#23233a',
+                        boxShadow: '0 0 16px #4fc3f7aa'
+                      },
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      '&:focus-visible': { outline: '2px solid #4fc3f7' }
+                    }} aria-label={`Suggestion ${user.pseudo}`}>
+                      <ListItemAvatar>
+                        <Box sx={{ position: 'relative' }}>
+                          <Avatar src={user.photo} sx={{ width: 40, height: 40, border: '2px solid #4fc3f7', boxShadow: '0 0 8px #4fc3f7' }} />
+                        </Box>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="h6" sx={{ fontWeight: 700, color: '#4fc3f7' }}>{user.pseudo}</Typography>
+                          {user.isNew && <Chip label="Nouveau" color="info" size="small" sx={{ ml: 1, bgcolor: '#1976d2', color: '#fff', fontWeight: 700 }} />}
+                        </Box>}
+                        secondary={<Typography variant="body2" color="#bbb">{user.bio}</Typography>}
+                      />
+                      <Tooltip title="Démarrer une conversation">
+                        <IconButton edge="end" color="primary" sx={{ ml: 1, '&:focus-visible': { outline: '2px solid #4fc3f7' }, transition: 'box-shadow 0.2s, background 0.2s' }} aria-label={`Démarrer une conversation avec ${user.pseudo}`}>
+                          <AddCircleIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </ListItem>
+                  </Fade>
+                </Slide>
+              ))}
+            </List>
+          </Box>
+        )}
         <List>
-          {results.map(user => (
-            <ListItem key={user.uid} button onClick={() => handleStartChat(user)} sx={{ mb: 2, borderRadius: 3, bgcolor: '#1e1e2f', boxShadow: 2, transition: 'background 0.2s, transform 0.2s', '&:hover': { bgcolor: '#4fc3f7', color: '#222', transform: 'scale(1.03)' } }}>
-              <ListItemAvatar>
-                <Box sx={{ position: 'relative' }}>
-                  <Avatar src={user.photo} sx={{ width: 64, height: 64, mr: 2, border: '2px solid #fff' }} />
-                  <FiberManualRecordIcon sx={{ position: 'absolute', bottom: 4, right: 10, color: isOnline(user.uid) ? '#4caf50' : '#bbb', fontSize: 20, border: '2px solid #1e1e2f', borderRadius: '50%' }} />
-                </Box>
-              </ListItemAvatar>
-              <ListItemText
-                primary={<Typography variant="h6" sx={{ fontWeight: 700 }}>{user.pseudo}</Typography>}
-                secondary={<Typography variant="body2" color="#bbb">{user.bio}</Typography>}
-              />
-            </ListItem>
+          {results.map((user, idx) => (
+            <Slide direction="up" in={true} mountOnEnter unmountOnExit key={user.uid} timeout={350 + idx * 30}>
+              <Fade in={true} timeout={400 + idx * 40}>
+                <ListItem button onClick={() => handleStartChat(user)} sx={{
+                  mb: 1.5,
+                  borderRadius: 3,
+                  bgcolor: '#1e1e2f',
+                  color: '#fff',
+                  boxShadow: '0 2px 8px #0004',
+                  minHeight: 56,
+                  px: 1.5,
+                  transition: 'background 0.2s, box-shadow 0.2s',
+                  '&:hover': {
+                    bgcolor: '#23233a',
+                    boxShadow: '0 0 16px #4fc3f7aa'
+                  },
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  '&:focus-visible': { outline: '2px solid #4fc3f7' }
+                }} aria-label={`Résultat ${user.pseudo}`}>
+                  <ListItemAvatar>
+                    <Box sx={{ position: 'relative' }}>
+                      <Avatar src={user.photo} sx={{ width: 40, height: 40, border: '2px solid #4fc3f7', boxShadow: '0 0 8px #4fc3f7' }} />
+                      {isOnline(user.uid) && (
+                        <FiberManualRecordIcon sx={{
+                          position: 'absolute', bottom: 2, right: 2,
+                          color: '#4caf50', fontSize: 14, border: '2px solid #23233a', borderRadius: '50%'
+                        }} />
+                      )}
+                    </Box>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: '#4fc3f7' }}>{user.pseudo}</Typography>
+                      {user.isNew && <Chip label="Nouveau" color="info" size="small" sx={{ ml: 1, bgcolor: '#1976d2', color: '#fff', fontWeight: 700 }} />}
+                    </Box>}
+                    secondary={<Typography variant="body2" color="#bbb">{user.bio}</Typography>}
+                  />
+                  <Tooltip title="Démarrer une conversation">
+                    <IconButton edge="end" color="primary" sx={{ ml: 1, '&:focus-visible': { outline: '2px solid #4fc3f7' }, transition: 'box-shadow 0.2s, background 0.2s' }} aria-label={`Démarrer une conversation avec ${user.pseudo}`}>
+                      <AddCircleIcon />
+                    </IconButton>
+                  </Tooltip>
+                </ListItem>
+              </Fade>
+            </Slide>
           ))}
         </List>
       </Paper>

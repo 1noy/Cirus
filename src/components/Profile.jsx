@@ -1,82 +1,93 @@
-import React, { useState, useContext } from 'react';
-import { auth, db } from '../firebase';
-import { doc, setDoc } from 'firebase/firestore';
-import { Avatar, Button, Box, Typography, TextField, Alert, CircularProgress, Fade } from '@mui/material';
+import React, { useState, useRef } from 'react';
+import { auth } from '../firebase';
+import { db, storage } from '../firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Box, Typography, Avatar, TextField, Button, IconButton, Paper, Fade, Tooltip, Switch } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import LogoutIcon from '@mui/icons-material/Logout';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { ToastContext } from '../App';
 
-export default function Profile({ onComplete }) {
+export default function Profile() {
   const user = auth.currentUser;
-  const [pseudo, setPseudo] = useState('');
-  const [bio, setBio] = useState('');
-  const [photo, setPhoto] = useState(user?.photoURL || '');
-  const [error, setError] = useState('');
+  const [edit, setEdit] = useState(false);
+  const [pseudo, setPseudo] = useState(user?.displayName || '');
+  const [bio, setBio] = useState(user?.bio || '');
+  const [avatar, setAvatar] = useState(user?.photoURL || '');
+  const [avatarFile, setAvatarFile] = useState(null); // Pour upload réel
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const { showToast } = useContext(ToastContext);
+  const fileInput = useRef();
+  const { showToast } = React.useContext(ToastContext);
 
-  const handleSave = async (e) => {
-    e.preventDefault();
-    setError('');
+  const handleAvatarChange = e => {
+    if (e.target.files && e.target.files[0]) {
+      setAvatar(URL.createObjectURL(e.target.files[0]));
+      setAvatarFile(e.target.files[0]);
+    }
+  };
+
+  const handleThemeToggle = () => {
+    setTheme(t => t === 'dark' ? 'light' : 'dark');
+    localStorage.setItem('theme', theme === 'dark' ? 'light' : 'dark');
+  };
+
+  const handleSave = async () => {
     setLoading(true);
-    setSuccess(false);
     try {
-      await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid,
-        email: user.email,
+      let photoURL = avatar;
+      if (avatarFile) {
+        const fileRef = ref(storage, `avatars/${user.uid}`);
+        await uploadBytes(fileRef, avatarFile);
+        photoURL = await getDownloadURL(fileRef);
+      }
+      await updateDoc(doc(db, 'users', user.uid), {
         pseudo,
         bio,
-        photo,
-        createdAt: new Date()
+        photo: photoURL
       });
-      setSuccess(true);
-      showToast('Profil enregistré avec succès !', 'success');
-      onComplete();
+      showToast('Profil mis à jour !', 'success');
+      setEdit(false);
+      setAvatarFile(null);
     } catch (e) {
-      setError("Erreur lors de l'enregistrement du profil.");
-      showToast("Erreur lors de l'enregistrement du profil.", 'error');
+      showToast("Erreur lors de la sauvegarde du profil.", 'error');
     }
     setLoading(false);
   };
 
   return (
-    <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="100vh" bgcolor="#121212">
-      <Box bgcolor="#222" p={4} borderRadius={3} boxShadow={3} minWidth={320}>
-        <Typography variant="h5" align="center" gutterBottom>Complète ton profil</Typography>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {success && <Fade in={success}><Alert severity="success" sx={{ mb: 2 }}>Profil enregistré avec succès !</Alert></Fade>}
-        <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
-          <Avatar src={photo} sx={{ width: 72, height: 72, mb: 1 }} />
-          <TextField
-            label="URL de la photo de profil"
-            value={photo}
-            onChange={e => setPhoto(e.target.value)}
-            fullWidth
-            sx={{ mb: 2 }}
-          />
-        </Box>
-        <form onSubmit={handleSave}>
-          <TextField
-            label="Pseudo"
-            value={pseudo}
-            onChange={e => setPseudo(e.target.value)}
-            fullWidth
-            required
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            label="Bio (optionnel)"
-            value={bio}
-            onChange={e => setBio(e.target.value)}
-            fullWidth
-            multiline
-            rows={2}
-            sx={{ mb: 2 }}
-          />
-          <Button type="submit" fullWidth variant="contained" color="primary" disabled={loading} sx={{ fontWeight: 700, fontSize: 18, transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.05)' } }}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : "Enregistrer et continuer"}
-          </Button>
-        </form>
+    <Paper elevation={8} sx={{ bgcolor: '#23233a', p: 4, borderRadius: 5, minWidth: 320, maxWidth: 420, mx: 'auto', boxShadow: '0 8px 32px #0008', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ position: 'relative', mb: 2 }}>
+        <Avatar src={avatar} sx={{ width: 90, height: 90, border: '3px solid #4fc3f7', boxShadow: '0 0 16px #4fc3f7cc', cursor: 'pointer', transition: 'box-shadow 0.2s', '&:hover': { boxShadow: '0 0 32px #4fc3f7' } }} onClick={() => fileInput.current.click()} />
+        <input type="file" accept="image/*" ref={fileInput} style={{ display: 'none' }} onChange={handleAvatarChange} aria-label="Changer l’avatar" />
+        <Tooltip title="Changer l’avatar">
+          <IconButton sx={{ position: 'absolute', bottom: 0, right: 0, bgcolor: '#1976d2', color: '#fff', '&:hover': { bgcolor: '#4fc3f7', color: '#222' } }} onClick={() => fileInput.current.click()}>
+            <UploadFileIcon />
+          </IconButton>
+        </Tooltip>
       </Box>
-    </Box>
+      {edit ? (
+        <>
+          <TextField value={pseudo} onChange={e => setPseudo(e.target.value)} label="Pseudo" fullWidth sx={{ mb: 2, bgcolor: '#181828', borderRadius: 2, input: { color: '#fff', fontWeight: 700 } }} />
+          <TextField value={bio} onChange={e => setBio(e.target.value)} label="Bio" fullWidth multiline minRows={2} sx={{ mb: 2, bgcolor: '#181828', borderRadius: 2, input: { color: '#fff' } }} />
+          <Button variant="contained" color="primary" startIcon={<SaveIcon />} onClick={handleSave} sx={{ fontWeight: 700, borderRadius: 2 }} disabled={loading}>{loading ? 'Enregistrement...' : 'Enregistrer'}</Button>
+        </>
+      ) : (
+        <>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: '#4fc3f7', mb: 1 }}>{pseudo}</Typography>
+          <Typography variant="body1" sx={{ color: '#fff', mb: 2, fontStyle: 'italic', fontSize: 16 }}>{bio || <span style={{ color: '#bbb' }}>Aucune bio renseignée.</span>}</Typography>
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <Tooltip title="Modifier le profil"><IconButton onClick={() => setEdit(true)}><EditIcon sx={{ color: '#4fc3f7' }} /></IconButton></Tooltip>
+            <Tooltip title="Déconnexion rapide"><IconButton><LogoutIcon sx={{ color: '#f44336' }} /></IconButton></Tooltip>
+          </Box>
+        </>
+      )}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
+        <Typography sx={{ color: '#fff', fontWeight: 700 }}>Thème aquatique</Typography>
+        <Switch checked={theme === 'dark'} onChange={handleThemeToggle} />
+      </Box>
+    </Paper>
   );
 } 
