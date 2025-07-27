@@ -1,213 +1,142 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from './firebase';
-import Login from './components/Login';
-import Profile from './components/Profile';
-import SearchUser from './components/SearchUser';
-import Chat from './components/Chat';
-import Sidebar from './components/Sidebar';
-import { doc, getDoc } from 'firebase/firestore';
-import Accueil from './components/Accueil';
-import Settings from './components/Settings';
-import Toast from './components/Toast';
-import { createContext } from 'react';
-import { Snackbar, Alert, Slide } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import SettingsIcon from '@mui/icons-material/Settings';
+import React, { useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import Home from './components/Home';
+import LoginRegister from './components/LoginRegister';
+import ChatPage from './components/ChatPage';
+import ProfilePage from './components/ProfilePage';
+import { ToastProvider } from './components/ToastContext';
+import CustomRouter from './components/CustomRouter';
+import PWAInstall from './components/PWAInstall';
 
-const getTheme = () => {
-  const mode = localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
-  return createTheme({
-    palette: {
-      mode,
-      background: {
-        default: mode === 'dark' ? '#121212' : '#f5f5f5',
-        paper: mode === 'dark' ? '#1e1e1e' : '#fff',
-      },
-      primary: {
-        main: '#1976d2',
-      },
-      secondary: {
-        main: '#ff4081',
-      },
-    },
-    typography: {
-      fontFamily: 'Roboto, Arial, sans-serif',
-    },
-  });
-};
+// Error Boundary pour capturer les erreurs React
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
 
-export const ToastContext = createContext({ showToast: () => {} });
+  static getDerivedStateFromError(error) {
+    // Ignorer complètement les erreurs DOM mineures
+    if (error.message && (
+      error.message.includes('removeChild') ||
+      error.message.includes('DOMNodeInsertedIntoDocument') ||
+      error.message.includes('MutationObserver')
+    )) {
+      return { hasError: false, error: null };
+    }
+    return { hasError: true, error };
+  }
 
-export function ToastProvider({ children }) {
-  const [toast, setToast] = useState({ open: false, message: '', severity: 'info' });
-  const showToast = useCallback((message, severity = 'info') => {
-    setToast({ open: true, message, severity });
-  }, []);
-  const handleClose = () => setToast(t => ({ ...t, open: false }));
+  componentDidCatch(error, errorInfo) {
+    // Ne logger que les erreurs vraiment critiques
+    if (!error.message.includes('removeChild') && 
+        !error.message.includes('DOMNodeInsertedIntoDocument') &&
+        !error.message.includes('MutationObserver')) {
+      // eslint-disable-next-line no-console, no-undef
+      console.error('Erreur critique capturée:', error, errorInfo);
+    }
+  }
 
-  return (
-    <ToastContext.Provider value={{ showToast }}>
-      {children}
-      <Snackbar
-        open={toast.open}
-        autoHideDuration={3000}
-        onClose={handleClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        TransitionComponent={Slide}
-      >
-        <Alert onClose={handleClose} severity={toast.severity} sx={{
-          fontWeight: 700,
-          fontSize: 16,
-          bgcolor: '#23233a',
-          color: '#4fc3f7',
-          border: '1.5px solid #1976d2',
-          boxShadow: '0 4px 24px #0008',
-          borderRadius: 2
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'linear-gradient(135deg, #23234a 0%, #181828 100%)',
+          color: '#fff',
+          textAlign: 'center',
+          padding: '20px'
         }}>
-          {toast.message}
-        </Alert>
-      </Snackbar>
-    </ToastContext.Provider>
-  );
-}
+          <div>
+            <h1 style={{ color: '#ff4757', marginBottom: '16px' }}>⚠️ Erreur Critique</h1>
+            <p style={{ marginBottom: '20px' }}>
+              Une erreur critique s&apos;est produite. Veuillez rafraîchir la page.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                padding: '12px 24px',
+                background: 'linear-gradient(90deg, #1cc6ff 0%, #009fff 100%)',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: '600'
+              }}
+            >
+              Rafraîchir
+            </button>
+          </div>
+        </div>
+      );
+    }
 
-function UltraAquaticBackground() {
-  if (typeof window === 'undefined' || localStorage.getItem('ultraAquatic') !== 'true') return null;
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: -10, pointerEvents: 'none', width: '100vw', height: '100vh' }}>
-      <svg width="100%" height="100%" viewBox="0 0 1920 1080" style={{ position: 'absolute', width: '100%', height: '100%' }}>
-        <defs>
-          <radialGradient id="bubbleGradientUltra" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#4fc3f7" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#181828" stopOpacity="0" />
-          </radialGradient>
-          <linearGradient id="waveGradientUltra" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#1976d2" stopOpacity="0.18" />
-            <stop offset="100%" stopColor="#181828" stopOpacity="0.7" />
-          </linearGradient>
-          <filter id="blurUltra" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="18" />
-          </filter>
-        </defs>
-        {/* Bulles animées supplémentaires */}
-        <circle cx="300" cy="900" r="60" fill="url(#bubbleGradientUltra)">
-          <animate attributeName="cy" values="900;200;900" dur="12s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="1600" cy="1000" r="40" fill="url(#bubbleGradientUltra)">
-          <animate attributeName="cy" values="1000;300;1000" dur="16s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="900" cy="1100" r="80" fill="url(#bubbleGradientUltra)">
-          <animate attributeName="cy" values="1100;100;1100" dur="20s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="500" cy="1200" r="30" fill="url(#bubbleGradientUltra)">
-          <animate attributeName="cy" values="1200;100;1200" dur="18s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="1200" cy="1300" r="50" fill="url(#bubbleGradientUltra)">
-          <animate attributeName="cy" values="1300;200;1300" dur="22s" repeatCount="indefinite" />
-        </circle>
-        {/* Poissons SVG animés */}
-        <g>
-          <g>
-            <ellipse cx="200" cy="600" rx="32" ry="12" fill="#4fc3f7" opacity="0.7">
-              <animateTransform attributeName="transform" type="translate" from="0 0" to="1400 0" dur="18s" repeatCount="indefinite" />
-            </ellipse>
-            <polygon points="232,600 250,590 250,610" fill="#1976d2" opacity="0.7">
-              <animateTransform attributeName="transform" type="translate" from="0 0" to="1400 0" dur="18s" repeatCount="indefinite" />
-            </polygon>
-          </g>
-          <g>
-            <ellipse cx="400" cy="800" rx="18" ry="7" fill="#fff" opacity="0.18">
-              <animateTransform attributeName="transform" type="translate" from="0 0" to="1000 -200" dur="14s" repeatCount="indefinite" />
-            </ellipse>
-            <polygon points="418,800 430,795 430,805" fill="#4fc3f7" opacity="0.18">
-              <animateTransform attributeName="transform" type="translate" from="0 0" to="1000 -200" dur="14s" repeatCount="indefinite" />
-            </polygon>
-          </g>
-        </g>
-        {/* Vagues */}
-        <path d="M0,900 Q480,850 960,900 T1920,900 V1080 H0Z" fill="url(#waveGradientUltra)" filter="url(#blurUltra)">
-          <animate attributeName="d" values="M0,900 Q480,850 960,900 T1920,900 V1080 H0Z;M0,910 Q480,870 960,910 T1920,910 V1080 H0Z;M0,900 Q480,850 960,900 T1920,900 V1080 H0Z" dur="8s" repeatCount="indefinite" />
-        </path>
-        {/* Rayons de lumière mouvants */}
-        <ellipse cx="960" cy="200" rx="700" ry="120" fill="#fff" opacity="0.08">
-          <animate attributeName="opacity" values="0.08;0.18;0.08" dur="7s" repeatCount="indefinite" />
-        </ellipse>
-        <ellipse cx="700" cy="180" rx="200" ry="40" fill="#fff" opacity="0.06">
-          <animate attributeName="opacity" values="0.06;0.16;0.06" dur="9s" repeatCount="indefinite" />
-        </ellipse>
-        <ellipse cx="1300" cy="220" rx="180" ry="36" fill="#fff" opacity="0.05">
-          <animate attributeName="opacity" values="0.05;0.13;0.05" dur="11s" repeatCount="indefinite" />
-        </ellipse>
-      </svg>
-    </div>
-  );
+    return this.props.children;
+  }
 }
 
 export default function App() {
-  const [user, setUser] = useState(null);
-  const [profileComplete, setProfileComplete] = useState(false);
-  const [checkingProfile, setCheckingProfile] = useState(false);
-  const [theme, setTheme] = useState(getTheme());
-  const [toast, setToast] = useState({ open: false, message: '', severity: 'info' });
-  const showToast = (message, severity = 'info', duration = 3000) => {
-    setToast({ open: true, message, severity, duration });
-  };
-  const handleToastClose = () => setToast(t => ({ ...t, open: false }));
-
+  // Gestion globale des erreurs non capturées
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      setUser(u);
-      if (u) {
-        setCheckingProfile(true);
-        const userDoc = await getDoc(doc(db, 'users', u.uid));
-        setProfileComplete(userDoc.exists() && userDoc.data().pseudo);
-        setCheckingProfile(false);
-      } else {
-        setProfileComplete(false);
+    const handleError = (event) => {
+      // Ignorer complètement les erreurs DOM mineures et les avertissements
+      if (event.error && event.error.message && (
+        event.error.message.includes('removeChild') ||
+        event.error.message.includes('DOMNodeInsertedIntoDocument') ||
+        event.error.message.includes('MutationObserver') ||
+        event.error.message.includes('Deprecation')
+      )) {
+        event.preventDefault();
+        return;
       }
-    });
-    return () => unsubscribe();
-  }, []);
+      
+      // Ne logger que les vraies erreurs
+      if (event.error && !event.error.message.includes('400')) {
+        // eslint-disable-next-line no-console, no-undef
+        console.error('Erreur globale:', event.error);
+      }
+      event.preventDefault();
+    };
 
-  useEffect(() => {
-    const onThemeChange = () => setTheme(getTheme());
-    window.addEventListener('themechange', onThemeChange);
-    return () => window.removeEventListener('themechange', onThemeChange);
+    const handleUnhandledRejection = (event) => {
+      // Ignorer les erreurs 400 (authentification)
+      if (event.reason && event.reason.message && event.reason.message.includes('400')) {
+        event.preventDefault();
+        return;
+      }
+      // eslint-disable-next-line no-console, no-undef
+      console.error('Promesse rejetée non gérée:', event.reason);
+      event.preventDefault();
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
   }, []);
 
   return (
-    <ToastContext.Provider value={{ showToast }}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <UltraAquaticBackground />
-        <Router>
+    <ErrorBoundary>
+      <ToastProvider>
+        <CustomRouter>
           <Routes>
-            {!user && (
-              <Route path="/*" element={<Login />} />
-            )}
-            {user && !profileComplete && !checkingProfile && (
-              <>
-                <Route path="/profil" element={<Profile onComplete={() => setProfileComplete(true)} />} />
-                <Route path="*" element={<Navigate to="/profil" />} />
-              </>
-            )}
-            {user && profileComplete && (
-              <>
-                <Route path="/accueil" element={<Accueil />} />
-                <Route path="/recherche" element={<SearchUser />} />
-                <Route path="/chat/:id" element={<><Sidebar /><Chat /></>} />
-                <Route path="/parametres" element={<Settings />} />
-                <Route path="*" element={<Navigate to="/accueil" />} />
-              </>
-            )}
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<LoginRegister mode="login" />} />
+            <Route path="/register" element={<LoginRegister mode="register" />} />
+            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
-        </Router>
-        <Toast open={toast.open} onClose={handleToastClose} message={toast.message} severity={toast.severity} duration={toast.duration} />
-      </ThemeProvider>
-    </ToastContext.Provider>
+          <PWAInstall />
+        </CustomRouter>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 } 

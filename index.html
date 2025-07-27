@@ -3,12 +3,78 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chat-changing</title>
-    <meta name="description" content="Application de messagerie moderne, sécurisée et en dark mode." />
+    <title>Chat-changing - Messagerie Moderne</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1cc6ff" />
+    <meta name="description" content="Messagerie moderne et sécurisée - Chat-changing" />
+    <meta name="keywords" content="chat, messagerie, communication, mobile, pwa" />
+    <meta name="author" content="Chat-changing Team" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- PWA Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icon-16x16.png" />
+    <link rel="apple-touch-icon" href="/icon-192x192.png" />
+    
+    <!-- iOS Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Chat-changing" />
+    
+    <!-- Windows Meta Tags -->
+    <meta name="msapplication-TileColor" content="#1cc6ff" />
+    <meta name="msapplication-TileImage" content="/icon-144x144.png" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Chat-changing" />
+    <meta property="og:description" content="Messagerie moderne et sécurisée" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://chat-changing.app" />
+    <meta property="og:image" content="/icon-512x512.png" />
+    
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Chat-changing" />
+    <meta name="twitter:description" content="Messagerie moderne et sécurisée" />
+    <meta name="twitter:image" content="/icon-512x512.png" />
+    
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   </head>
-  <body style="background: #121212; color: #fff;">
+  <body style="background: #121212; color: #fff; margin: 0; font-family: 'Inter', sans-serif;">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW enregistré: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW échec d\'enregistrement: ', registrationError);
+            });
+        });
+      }
+      
+      // Détecter si l'app peut être installée
+      window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('App peut être installée');
+        // Stocker l'événement pour l'utiliser plus tard
+        window.deferredPrompt = e;
+      });
+      
+      // Détecter si l'app est installée
+      window.addEventListener('appinstalled', (evt) => {
+        console.log('App installée');
+      });
+    </script>
   </body>
 </html> 
