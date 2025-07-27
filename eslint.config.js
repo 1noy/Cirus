@@ -27,7 +27,15 @@ export default [
         Blob: true,
         MediaRecorder: true,
         navigator: true,
-        Audio: true
+        Audio: true,
+        Worker: true,
+        IntersectionObserver: true,
+        PerformanceObserver: true,
+        performance: true,
+        process: true,
+        fetch: true,
+        caches: true,
+        Image: true
       },
       parserOptions: {
         ecmaFeatures: {
@@ -44,8 +52,15 @@ export default [
       ...reactHooks.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
+      'react/display-name': 'off',
+      'react/no-unescaped-entities': 'off',
       'no-unused-vars': 'warn',
-      'no-console': 'warn'
+      'no-console': 'warn',
+      'no-undef': 'warn',
+      'no-inner-declarations': 'warn',
+      'no-case-declarations': 'warn',
+      'no-empty': 'warn',
+      'react-hooks/exhaustive-deps': 'warn'
     },
     settings: {
       react: {

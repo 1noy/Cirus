@@ -38,9 +38,8 @@ export default defineConfig({
           'firebase-firestore': ['firebase/firestore'],
           'firebase-storage': ['firebase/storage'],
           
-          // UI Libraries
-          'mui-core': ['@mui/material'],
-          'mui-icons': ['@mui/icons-material'],
+          // UI Libraries (regroupées)
+          'mui': ['@mui/material', '@mui/icons-material'],
           'emotion': ['@emotion/react', '@emotion/styled'],
           
           // Emoji (lazy load)
@@ -73,7 +72,9 @@ export default defineConfig({
     include: [
       'react',
       'react-dom',
-      'react-router-dom'
+      'react-router-dom',
+      '@mui/material',
+      '@mui/icons-material'
     ],
     exclude: [
       'canvas',

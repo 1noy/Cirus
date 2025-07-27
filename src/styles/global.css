@@ -96,12 +96,12 @@ img {
 }
 
 img.lazy {
-  opacity: 0;
+    opacity: 0;
   transition: opacity var(--animation-duration) ease-in;
-}
+  }
 
 img.lazy.loaded {
-  opacity: 1;
+    opacity: 1;
 }
 
 /* Optimisations pour les boutons */
@@ -253,14 +253,14 @@ input:focus, textarea:focus {
     font-size: 16px;
     touch-action: manipulation;
   }
-  
+
   /* Optimisations pour les inputs mobiles */
   input, textarea {
     font-size: 16px;
     padding: 12px 16px;
     min-height: 44px;
   }
-  
+
   /* Optimisations pour les modales mobiles */
   .modal-backdrop {
     padding: 16px;

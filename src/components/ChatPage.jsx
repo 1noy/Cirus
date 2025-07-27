@@ -179,10 +179,10 @@ export default function ChatPage() {
     const unsubscribe = authListener;
     return () => {
       if (unsubscribe) {
-        unsubscribe();
+      unsubscribe();
       }
       if (mounted) {
-        updateUserStatus(false);
+      updateUserStatus(false);
       }
     };
   }, [authListener, updateUserStatus, mounted]);
@@ -520,9 +520,9 @@ export default function ChatPage() {
       {/* Sidebar des contacts */}
       <LazyComponentLoader>
         <MemoizedContactsList
-          onSelectContact={handleSelectContact}
-          selectedContact={selectedContact}
-        />
+        onSelectContact={handleSelectContact}
+        selectedContact={selectedContact}
+      />
       </LazyComponentLoader>
       
       {/* Zone de chat principale */}
@@ -604,7 +604,7 @@ export default function ChatPage() {
                     borderRadius: '50%',
                     background: selectedContact.online ? '#4caf50' : '#666'
                   }} />
-                  {selectedContact.online ? 'En ligne' : 'Hors ligne'}
+                    {selectedContact.online ? 'En ligne' : 'Hors ligne'}
                 </div>
               </div>
             )}
@@ -644,18 +644,18 @@ export default function ChatPage() {
               Profil
             </button>
             
-            <button
-              onClick={handleLogout}
+          <button
+            onClick={handleLogout}
               aria-label="Se déconnecter"
               role="button"
               tabIndex={0}
-              style={{
-                background: 'linear-gradient(90deg, #ff4d4d 0%, #ff0000 100%)',
-                border: 'none',
-                borderRadius: '8px',
-                color: '#fff',
+            style={{
+              background: 'linear-gradient(90deg, #ff4d4d 0%, #ff0000 100%)',
+              border: 'none',
+              borderRadius: '8px',
+              color: '#fff',
                 padding: getResponsiveValue('6px 12px', '8px 16px'),
-                cursor: 'pointer',
+              cursor: 'pointer',
                 fontSize: getResponsiveValue('12px', '14px'),
                 fontWeight: '600',
                 transition: 'all 0.2s ease',
@@ -668,10 +668,10 @@ export default function ChatPage() {
                   e.preventDefault();
                   handleLogout();
                 }
-              }}
-            >
-              Déconnexion
-            </button>
+            }}
+          >
+            Déconnexion
+          </button>
           </div>
         </div>
         
@@ -699,7 +699,7 @@ export default function ChatPage() {
                 ? `Commencez à discuter avec ${selectedContact.displayName} !`
                 : 'Sélectionnez un contact pour commencer à discuter'
               }
-            </div>
+              </div>
           ) : (
             <div style={{
               display: 'flex',
@@ -712,35 +712,35 @@ export default function ChatPage() {
         </div>
         
         {/* Zone de saisie */}
-        <div style={{
+          <div style={{
           padding: getResponsiveValue('12px 16px', '20px'),
-          borderTop: '1px solid rgba(62, 242, 255, 0.2)',
+            borderTop: '1px solid rgba(62, 242, 255, 0.2)',
           background: 'rgba(255, 255, 255, 0.05)',
-          backdropFilter: 'blur(10px)'
+            backdropFilter: 'blur(10px)'
         }}>
           <form onSubmit={handleSendMessage} style={{
             display: 'flex',
             alignItems: 'center',
             gap: getResponsiveValue('8px', '12px')
           }}>
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Tapez votre message..."
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Tapez votre message..."
               disabled={!selectedContact || loading}
               aria-label="Saisir un message"
               role="textbox"
-              style={{
+                  style={{
                 flex: 1,
                 padding: getResponsiveValue('12px 14px', '12px 16px'),
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: getResponsiveValue('20px', '24px'),
-                background: 'rgba(255, 255, 255, 0.1)',
-                color: '#fff',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    color: '#fff',
                 fontSize: getResponsiveValue('14px', '16px'),
                 minHeight: getResponsiveValue('44px', 'auto'),
-                outline: 'none',
+                    outline: 'none',
                 transition: 'all 0.2s ease'
               }}
               onFocus={(e) => {
@@ -753,25 +753,25 @@ export default function ChatPage() {
               }}
             />
             
-            <button
-              type="button"
-              onClick={() => setShowVoiceRecorder(true)}
+              <button
+                type="button"
+                onClick={() => setShowVoiceRecorder(true)}
               disabled={!selectedContact || loading}
               aria-label="Enregistrer un message vocal"
               role="button"
               tabIndex={0}
-              style={{
+                style={{
                 background: 'linear-gradient(135deg, #1cc6ff 0%, #009fff 100%)',
-                border: 'none',
-                borderRadius: '50%',
+                  border: 'none',
+                  borderRadius: '50%',
                 width: getResponsiveValue('44px', '48px'),
                 height: getResponsiveValue('44px', '48px'),
-                color: '#fff',
+                  color: '#fff',
                 cursor: selectedContact && !loading ? 'pointer' : 'not-allowed',
                 fontSize: getResponsiveValue('18px', '20px'),
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 transition: 'all 0.2s ease',
                 opacity: selectedContact && !loading ? 1 : 0.5,
                 minWidth: getResponsiveValue('44px', 'auto'),
@@ -792,23 +792,23 @@ export default function ChatPage() {
                   e.preventDefault();
                   setShowVoiceRecorder(true);
                 }
-              }}
-            >
-              🎤
-            </button>
+                }}
+              >
+                🎤
+              </button>
             
-            <button
-              type="submit"
+              <button
+                type="submit"
               disabled={!selectedContact || !newMessage.trim() || loading}
               aria-label="Envoyer le message"
               role="button"
               tabIndex={0}
-              style={{
+                style={{
                 background: 'linear-gradient(135deg, #1cc6ff 0%, #009fff 100%)',
-                border: 'none',
+                  border: 'none',
                 borderRadius: getResponsiveValue('20px', '24px'),
                 padding: getResponsiveValue('12px 20px', '12px 24px'),
-                color: '#fff',
+                  color: '#fff',
                 cursor: selectedContact && newMessage.trim() && !loading ? 'pointer' : 'not-allowed',
                 fontSize: getResponsiveValue('14px', '16px'),
                 fontWeight: '600',
@@ -835,18 +835,18 @@ export default function ChatPage() {
               }}
             >
               Envoyer
-            </button>
-          </form>
-        </div>
+              </button>
+            </form>
+          </div>
       </div>
       
       {/* Enregistreur vocal */}
       {showVoiceRecorder && (
         <LazyComponentLoader>
           <MemoizedVoiceRecorder
-            onClose={() => setShowVoiceRecorder(false)}
-            onSend={handleSendVoiceMessage}
-          />
+          onClose={() => setShowVoiceRecorder(false)}
+          onSend={handleSendVoiceMessage}
+        />
         </LazyComponentLoader>
       )}
     </div>
