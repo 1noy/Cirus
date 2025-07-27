@@ -22,12 +22,35 @@ export default function Settings({ open, onClose, onThemeChange, theme }) {
           <label style={{ fontWeight: 600, fontSize: 18, marginRight: 12 }}>Thème :</label>
           <button
             onClick={handleTheme}
+            aria-label={`Changer le thème vers ${theme === 'dark' ? 'clair' : 'sombre'}`}
+            role="button"
+            tabIndex={0}
             style={{
-              padding: '8px 24px', borderRadius: 12, border: 'none',
+              padding: '8px 24px',
+              borderRadius: 12,
+              border: 'none',
               background: theme === 'dark'
                 ? 'linear-gradient(90deg, #1cc6ff 0%, #009fff 100%)'
                 : 'linear-gradient(90deg, #fc5c7d 0%, #6a82fb 100%)',
-              color: '#fff', fontWeight: 700, fontSize: 16, cursor: 'pointer'
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: 16,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-1px)';
+              e.target.style.boxShadow = '0 4px 12px rgba(28, 198, 255, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = 'none';
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleTheme();
+              }
             }}
           >
             {theme === 'dark' ? 'Sombre' : 'Clair'}
@@ -35,9 +58,34 @@ export default function Settings({ open, onClose, onThemeChange, theme }) {
         </div>
         <button
           onClick={onClose}
+          aria-label="Fermer les paramètres"
+          role="button"
+          tabIndex={0}
           style={{
-            marginTop: 12, padding: '10px 32px', borderRadius: 12, border: 'none',
-            background: '#3ef2ff', color: '#23234a', fontWeight: 700, fontSize: 18, cursor: 'pointer'
+            marginTop: 12,
+            padding: '10px 32px',
+            borderRadius: 12,
+            border: 'none',
+            background: '#3ef2ff',
+            color: '#23234a',
+            fontWeight: 700,
+            fontSize: 18,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = 'translateY(-1px)';
+            e.target.style.boxShadow = '0 4px 12px rgba(62, 242, 255, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = 'none';
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onClose();
+            }
           }}
         >
           Fermer

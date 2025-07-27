@@ -93,7 +93,7 @@ export default function ProfilePage() {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!auth.currentUser) {
-      showToast({ message: 'Session expirée, reconnectez-vous.', severity: 'error' });
+      showToast({ message: 'Session expirée, reconnexion requise.', severity: 'error' });
       navigate('/login');
       return;
     }
@@ -404,7 +404,7 @@ export default function ProfilePage() {
               <textarea
                 value={profile.bio}
                 onChange={(e) => setProfile({...profile, bio: e.target.value})}
-                placeholder="Parlez-nous de vous..."
+                placeholder="Parle de toi..."
                 rows={3}
                 style={{
                   width: '100%',
@@ -526,61 +526,100 @@ export default function ProfilePage() {
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-        <button
-          type="submit"
+            {/* Boutons d'action */}
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              marginTop: '16px'
+            }}>
+              <button
+                type="button"
+                onClick={handleSave}
                 disabled={saving}
+                aria-label="Sauvegarder le profil"
+                role="button"
+                tabIndex={0}
                 style={{
                   flex: 1,
                   padding: '14px 24px',
-                  background: 'linear-gradient(90deg, #1cc6ff 0%, #009fff 100%)',
                   border: 'none',
                   borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #1cc6ff 0%, #009fff 100%)',
                   color: '#fff',
+                  fontSize: '16px',
+                  fontWeight: '600',
                   cursor: saving ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  opacity: saving ? 0.6 : 1,
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 2px 8px rgba(28, 198, 255, 0.3)'
+                  transition: 'all 0.2s ease',
+                  opacity: saving ? 0.7 : 1
                 }}
                 onMouseEnter={(e) => {
                   if (!saving) {
                     e.target.style.transform = 'translateY(-1px)';
-                    e.target.style.boxShadow = '0 4px 12px rgba(28, 198, 255, 0.4)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(28, 198, 255, 0.3)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 2px 8px rgba(28, 198, 255, 0.3)';
+                  e.target.style.boxShadow = 'none';
+                }}
+                onKeyDown={(e) => {
+                  if ((e.key === 'Enter' || e.key === ' ') && !saving) {
+                    e.preventDefault();
+                    handleSave();
+                  }
                 }}
               >
-                {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+                {saving ? (
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid rgba(255, 255, 255, 0.3)',
+                      borderTop: '2px solid #fff',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    Sauvegarde...
+                  </span>
+                ) : (
+                  'Sauvegarder'
+                )}
               </button>
               
-        <button
-          type="button"
-          onClick={() => navigate('/chat')}
+              <button
+                type="button"
+                onClick={() => navigate('/chat')}
+                aria-label="Retourner au chat"
+                role="button"
+                tabIndex={0}
                 style={{
                   flex: 1,
                   padding: '14px 24px',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(62, 242, 255, 0.3)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
                   borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.1)',
                   color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '14px',
+                  fontSize: '16px',
                   fontWeight: '600',
-                  transition: 'all 0.3s ease'
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.15)';
+                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+                  e.target.style.transform = 'translateY(-1px)';
                 }}
                 onMouseLeave={(e) => {
                   e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.target.style.transform = 'translateY(0)';
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate('/chat');
+                  }
                 }}
               >
-                Annuler
+                Retour au chat
               </button>
             </div>
       </form>

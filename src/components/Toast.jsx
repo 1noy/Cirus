@@ -77,24 +77,36 @@ export default function Toast({ open, message, severity = 'info', onClose }) {
       <span>{message}</span>
       <button
         onClick={handleClose}
+        aria-label="Fermer la notification"
+        role="button"
+        tabIndex={0}
         style={{
-          marginLeft: 'auto',
           background: 'none',
           border: 'none',
-          color: '#fff',
-          fontSize: 22,
+          color: 'rgba(255, 255, 255, 0.8)',
           cursor: 'pointer',
-          transition: 'opacity 0.2s',
+          fontSize: '20px',
+          marginLeft: '12px',
+          padding: '4px',
+          borderRadius: '4px',
+          transition: 'all 0.2s ease'
         }}
         onMouseEnter={(e) => {
-          e.target.style.opacity = '0.8';
+          e.target.style.color = '#fff';
+          e.target.style.background = 'rgba(255, 255, 255, 0.1)';
         }}
         onMouseLeave={(e) => {
-          e.target.style.opacity = '1';
+          e.target.style.color = 'rgba(255, 255, 255, 0.8)';
+          e.target.style.background = 'none';
         }}
-        aria-label="Fermer la notification"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleClose();
+          }
+        }}
       >
-        ×
+        ✕
       </button>
     </div>
   );

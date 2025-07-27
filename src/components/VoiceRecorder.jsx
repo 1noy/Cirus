@@ -1,34 +1,84 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useToast } from './ToastContext';
+import { useSafeTimer, useMemoryLeakPrevention } from '../utils/useMemoryLeakPrevention';
 
-export default function VoiceRecorder({ onSendVoice, disabled = false }) {
+export default function VoiceRecorder({ onClose, onSend, disabled = false }) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const mediaRecorderRef = useRef(null);
   const audioRef = useRef(null);
-  const timerRef = useRef(null);
+  const audioWorkerRef = useRef(null);
   const { showToast } = useToast();
+  const { setTimeout, clearTimer, isMounted } = useSafeTimer();
+  const { isMounted: isComponentMounted } = useMemoryLeakPrevention();
 
+  // Initialisation du Web Worker
   useEffect(() => {
+    if (typeof Worker !== 'undefined') {
+      audioWorkerRef.current = new Worker('/audio-worker.js');
+      
+      audioWorkerRef.current.onmessage = (e) => {
+        if (!isComponentMounted()) return;
+        
+        const { type, data, error } = e.data;
+        
+        switch (type) {
+          case 'AUDIO_COMPRESSED':
+            setAudioBlob(data);
+            const url = URL.createObjectURL(data);
+            setAudioUrl(url);
+            setDuration(data.duration || 0);
+            setIsProcessing(false);
+            showToast({ 
+              message: `Audio compressé: ${Math.round((data.compressedSize / data.originalSize) * 100)}% de réduction`, 
+              severity: 'success' 
+            });
+            break;
+          case 'AUDIO_ANALYZED':
+            console.log('Analyse audio:', data);
+            break;
+          case 'ERROR':
+            showToast({ message: `Erreur audio: ${error}`, severity: 'error' });
+            setIsProcessing(false);
+            break;
+        }
+      };
+    }
+
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
       }
+      if (audioWorkerRef.current) {
+        audioWorkerRef.current.terminate();
+      }
     };
-  }, [audioUrl]);
+  }, [audioUrl, showToast, isComponentMounted]);
 
-  const startRecording = async () => {
+  // Optimisation avec useCallback
+  const startRecording = useCallback(async () => {
+    if (!isComponentMounted()) return;
+    
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 44100,
+          channelCount: 1
+        } 
+      });
+      
+      mediaRecorderRef.current = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
       
       const chunks = [];
       
@@ -37,16 +87,28 @@ export default function VoiceRecorder({ onSendVoice, disabled = false }) {
       };
       
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
-        setAudioBlob(blob);
-        const url = URL.createObjectURL(blob);
-        setAudioUrl(url);
+        if (!isComponentMounted()) return;
         
-        // Calculer la durée
-        const audio = new Audio(url);
-        audio.addEventListener('loadedmetadata', () => {
-          setDuration(audio.duration);
-        });
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        
+        // Traitement avec Web Worker si disponible
+        if (audioWorkerRef.current) {
+          setIsProcessing(true);
+          audioWorkerRef.current.postMessage({
+            type: 'COMPRESS_AUDIO',
+            data: blob
+          });
+        } else {
+          // Fallback sans Web Worker
+          setAudioBlob(blob);
+          const url = URL.createObjectURL(blob);
+          setAudioUrl(url);
+          
+          const audio = new Audio(url);
+          audio.addEventListener('loadedmetadata', () => {
+            setDuration(audio.duration);
+          });
+        }
         
         // Arrêter tous les tracks
         stream.getTracks().forEach(track => track.stop());
@@ -56,69 +118,80 @@ export default function VoiceRecorder({ onSendVoice, disabled = false }) {
       setIsRecording(true);
       setRecordingTime(0);
       
-      // Timer pour le temps d'enregistrement
-      timerRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
+      // Timer optimisé avec requestAnimationFrame
+      let startTime = Date.now();
+      const updateTimer = () => {
+        if (isRecording && isComponentMounted()) {
+          setRecordingTime(Math.floor((Date.now() - startTime) / 1000));
+          const timerId = requestAnimationFrame(updateTimer);
+          return () => cancelAnimationFrame(timerId);
+        }
+      };
+      requestAnimationFrame(updateTimer);
       
       showToast({ message: 'Enregistrement démarré...', severity: 'info' });
-    } catch {
+    } catch (error) {
+      if (!isComponentMounted()) return;
+      
       showToast({ message: 'Erreur d\'accès au microphone', severity: 'error' });
+      console.error('Erreur d\'enregistrement:', error);
     }
-  };
+  }, [isRecording, showToast, isComponentMounted]);
 
-  const stopRecording = () => {
+  const stopRecording = useCallback(() => {
+    if (!isComponentMounted()) return;
+    
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-      
       showToast({ message: 'Enregistrement terminé', severity: 'success' });
     }
-  };
+  }, [isRecording, showToast, isComponentMounted]);
 
-  const playAudio = () => {
-    if (audioRef.current) {
+  const playAudio = useCallback(() => {
+    if (audioRef.current && isComponentMounted()) {
       audioRef.current.play();
       setIsPlaying(true);
     }
-  };
+  }, [isComponentMounted]);
 
-  const pauseAudio = () => {
-    if (audioRef.current) {
+  const pauseAudio = useCallback(() => {
+    if (audioRef.current && isComponentMounted()) {
       audioRef.current.pause();
       setIsPlaying(false);
     }
-  };
+  }, [isComponentMounted]);
 
-  const handleSend = () => {
-    if (audioBlob && onSendVoice) {
-      onSendVoice(audioBlob, duration);
+  const handleSend = useCallback(() => {
+    if (!isComponentMounted()) return;
+    
+    if (audioBlob && onSend) {
+      onSend(audioBlob, duration);
       setAudioBlob(null);
       setAudioUrl(null);
       setDuration(0);
       setRecordingTime(0);
+      onClose();
     }
-  };
+  }, [audioBlob, duration, onSend, onClose, isComponentMounted]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
+    if (!isComponentMounted()) return;
+    
     setAudioBlob(null);
     setAudioUrl(null);
     setDuration(0);
     setRecordingTime(0);
-    if (audioUrl) {
-      URL.revokeObjectURL(audioUrl);
-    }
-  };
+    setIsProcessing(false);
+    onClose();
+  }, [onClose, isComponentMounted]);
 
-  const formatTime = (seconds) => {
+  const formatTime = useCallback((seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }, []);
 
   return (
     <div style={{
@@ -210,33 +283,85 @@ export default function VoiceRecorder({ onSendVoice, disabled = false }) {
             </div>
           </div>
           
-          <div style={{ display: 'flex', gap: '8px' }}>
+          {/* Boutons d'action */}
+          <div style={{
+            display: 'flex',
+            gap: '12px',
+            marginTop: '20px'
+          }}>
             <button
+              type="button"
               onClick={handleSend}
+              disabled={!audioBlob || isProcessing}
+              aria-label="Envoyer le message vocal"
+              role="button"
+              tabIndex={0}
               style={{
-                padding: '6px 12px',
-                background: 'linear-gradient(90deg, #4caf50 0%, #45a049 100%)',
+                flex: 1,
+                padding: '12px 24px',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: '8px',
+                background: audioBlob && !isProcessing 
+                  ? 'linear-gradient(135deg, #1cc6ff 0%, #009fff 100%)' 
+                  : 'rgba(255, 255, 255, 0.1)',
                 color: '#fff',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: '600'
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: audioBlob && !isProcessing ? 'pointer' : 'not-allowed',
+                transition: 'all 0.2s ease',
+                opacity: audioBlob && !isProcessing ? 1 : 0.5
+              }}
+              onMouseEnter={(e) => {
+                if (audioBlob && !isProcessing) {
+                  e.target.style.transform = 'translateY(-1px)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(28, 198, 255, 0.3)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = 'none';
+              }}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && audioBlob && !isProcessing) {
+                  e.preventDefault();
+                  handleSend();
+                }
               }}
             >
-              Envoyer
+              {isProcessing ? 'Traitement...' : 'Envoyer'}
             </button>
+            
             <button
+              type="button"
               onClick={handleCancel}
+              aria-label="Annuler l'enregistrement"
+              role="button"
+              tabIndex={0}
               style={{
-                padding: '6px 12px',
+                flex: 1,
+                padding: '12px 24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '8px',
                 background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '6px',
                 color: '#fff',
+                fontSize: '16px',
+                fontWeight: '600',
                 cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: '600'
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+                e.target.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.target.style.transform = 'translateY(0)';
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleCancel();
+                }
               }}
             >
               Annuler

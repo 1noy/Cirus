@@ -99,7 +99,7 @@ export default function VoiceMessage({ audioUrl, duration, sender, timestamp, is
         fontWeight: '600',
         color: isOwnMessage ? '#fff' : '#a0f0ff'
       }}>
-        {isOwnMessage ? 'Vous' : sender} • Message vocal
+        {isOwnMessage ? 'Moi' : sender} • Message vocal
       </div>
 
       {/* Contrôles audio */}

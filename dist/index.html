@@ -11,74 +11,45 @@
     <meta name="keywords" content="chat, messagerie, communication, mobile, pwa" />
     <meta name="author" content="Chat-changing Team" />
     
+    <!-- Performance optimizations -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://firebaseapp.com" />
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
+    <link rel="dns-prefetch" href="https://apis.google.com" />
+    <link rel="dns-prefetch" href="https://accounts.google.com" />
+    
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
     
-    <!-- PWA Icons -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/icon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/icon-16x16.png" />
-    <link rel="apple-touch-icon" href="/icon-192x192.png" />
-    
-    <!-- iOS Meta Tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Chat-changing" />
-    
-    <!-- Windows Meta Tags -->
-    <meta name="msapplication-TileColor" content="#1cc6ff" />
-    <meta name="msapplication-TileImage" content="/icon-144x144.png" />
-    
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="Chat-changing" />
-    <meta property="og:description" content="Messagerie moderne et sécurisée" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://chat-changing.app" />
-    <meta property="og:image" content="/icon-512x512.png" />
-    
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Chat-changing" />
-    <meta name="twitter:description" content="Messagerie moderne et sécurisée" />
-    <meta name="twitter:image" content="/icon-512x512.png" />
-    
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-CU2Hjp85.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/vendor-DavUf6mE.js">
-    <link rel="modulepreload" crossorigin href="/assets/router-DQ-MWp40.js">
-    <link rel="modulepreload" crossorigin href="/assets/firebase-BLLaeY4X.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-CBriUKrt.css">
-  </head>
-  <body style="background: #121212; color: #fff; margin: 0; font-family: 'Inter', sans-serif;">
-    <div id="root"></div>
     
-    <!-- PWA Service Worker Registration -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('SW enregistré: ', registration);
-            })
-            .catch((registrationError) => {
-              console.log('SW échec d\'enregistrement: ', registrationError);
-            });
-        });
-      }
-      
-      // Détecter si l'app peut être installée
-      window.addEventListener('beforeinstallprompt', (e) => {
-        console.log('App peut être installée');
-        // Stocker l'événement pour l'utiliser plus tard
-        window.deferredPrompt = e;
-      });
-      
-      // Détecter si l'app est installée
-      window.addEventListener('appinstalled', (evt) => {
-        console.log('App installée');
-      });
-    </script>
+    <!-- Performance hints -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <!-- Security headers - CSP corrigé pour Firebase -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self'; 
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com https://www.gstatic.com; 
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data: https: blob:;
+      connect-src 'self' https://firebaseapp.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://apis.google.com https://accounts.google.com wss://firebaseapp.com;
+      frame-src 'self' https://accounts.google.com https://apis.google.com;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+    " />
+    <script type="module" crossorigin src="/assets/index-CPVvppRK.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/react-core-Bfr4Vjs6.js">
+    <link rel="modulepreload" crossorigin href="/assets/router-CfdosDU_.js">
+    <link rel="modulepreload" crossorigin href="/assets/mui-core-hP9lAPsz.js">
+    <link rel="modulepreload" crossorigin href="/assets/emotion-C3f8BbQd.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-DmockKkT.css">
+  </head>
+  <body>
+    <div id="root"></div>
   </body>
 </html> 

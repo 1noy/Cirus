@@ -3,7 +3,7 @@ import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 import { useToast } from './ToastContext';
 
-export default function UserSearch({ onUserSelect, onClose }) {
+export default function UserSearch({ contacts, onUserSelect, onClose, onMessage }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -102,10 +102,33 @@ export default function UserSearch({ onUserSelect, onClose }) {
 
   const handleUserSelect = useCallback((user) => {
     if (mounted) {
-      onUserSelect(user);
+      // Vérifier si l'utilisateur est déjà dans les contacts
+      const existingContact = contacts?.find(contact => contact.email === user.email);
+      
+      if (existingContact) {
+        // Si le contact existe, ouvrir directement la discussion
+        if (onMessage) {
+          onMessage(existingContact);
+        } else {
+          onUserSelect(existingContact);
+        }
+      } else {
+        // Sinon, ajouter le contact
+        onUserSelect(user);
+      }
       onClose();
     }
-  }, [onUserSelect, onClose, mounted]);
+  }, [onUserSelect, onMessage, onClose, mounted, contacts]);
+
+  // Vérifier si un utilisateur est déjà dans les contacts
+  const isInContacts = useCallback((user) => {
+    return contacts && contacts.some(contact => contact.email === user.email);
+  }, [contacts]);
+
+  // Obtenir le contact existant
+  const getExistingContact = useCallback((user) => {
+    return contacts?.find(contact => contact.email === user.email);
+  }, [contacts]);
 
   return (
     <div style={{
@@ -234,7 +257,19 @@ export default function UserSearch({ onUserSelect, onClose }) {
             searchResults.map((user) => (
               <div
                 key={user.id}
-                onClick={() => handleUserSelect(user)}
+                onClick={() => {
+                  // Si l'utilisateur est déjà dans les contacts, ouvrir directement la discussion
+                  if (isInContacts(user)) {
+                    const existingContact = getExistingContact(user);
+                    if (existingContact && onMessage) {
+                      onMessage(existingContact);
+                      onClose();
+                    }
+                  } else {
+                    // Sinon, sélectionner l'utilisateur pour l'ajouter
+                    handleUserSelect(user);
+                  }
+                }}
                 style={{
                   padding: '12px 16px',
                   borderBottom: '1px solid rgba(62, 242, 255, 0.1)',
@@ -278,12 +313,14 @@ export default function UserSearch({ onUserSelect, onClose }) {
                   <div style={{ 
                     fontWeight: 'bold', 
                     fontSize: '14px',
-                    color: user.online ? '#4caf50' : '#fff'
+                    color: user.online ? '#4caf50' : '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
                   }}>
                     {user.displayName || user.email}
                     {user.online && (
                       <span style={{ 
-                        marginLeft: '8px', 
                         fontSize: '10px',
                         background: '#4caf50',
                         color: '#fff',
@@ -293,36 +330,116 @@ export default function UserSearch({ onUserSelect, onClose }) {
                         En ligne
                       </span>
                     )}
+                    {isInContacts(user) && (
+                      <span style={{ 
+                        fontSize: '10px',
+                        background: 'rgba(76, 175, 80, 0.2)',
+                        color: '#4caf50',
+                        padding: '2px 6px',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(76, 175, 80, 0.3)'
+                      }}>
+                        ✓ Contact existant
+                      </span>
+                    )}
                   </div>
                   <div style={{ 
                     fontSize: '12px', 
                     color: '#a0f0ff',
-                    marginTop: '2px'
+                    marginTop: '2px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
                   }}>
                     {user.email}
+                    {isInContacts(user) && (
+                      <span style={{
+                        fontSize: '10px',
+                        color: '#4caf50',
+                        fontStyle: 'italic'
+                      }}>
+                        (Cliquer pour ouvrir le chat)
+                      </span>
+                    )}
                   </div>
                 </div>
-                <button
-                  style={{
-                    padding: '6px 12px',
-                    background: 'linear-gradient(90deg, #1cc6ff 0%, #009fff 100%)',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = 'scale(1.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = 'scale(1)';
-                  }}
-                >
-                  Ajouter
-                </button>
+                {isInContacts(user) ? (
+                  <div style={{
+                    display: 'flex',
+                    gap: '8px'
+                  }}>
+                    <span style={{
+                      fontSize: '10px',
+                      color: '#4caf50',
+                      background: 'rgba(76, 175, 80, 0.2)',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      ✓ Contact
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const existingContact = getExistingContact(user);
+                        if (existingContact && onMessage) {
+                          onMessage(existingContact);
+                          onClose();
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        background: 'linear-gradient(90deg, #4caf50 0%, #45a049 100%)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'scale(1.05)';
+                        e.target.style.boxShadow = '0 2px 8px rgba(76, 175, 80, 0.3)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'scale(1)';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    >
+                      Ouvrir chat
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUserSelect(user);
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      background: 'linear-gradient(90deg, #1cc6ff 0%, #009fff 100%)',
+                      border: 'none',
+                      borderRadius: '6px',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.transform = 'scale(1.05)';
+                      e.target.style.boxShadow = '0 2px 8px rgba(28, 198, 255, 0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.transform = 'scale(1)';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  >
+                    Ajouter
+                  </button>
+                )}
               </div>
             ))
           )}

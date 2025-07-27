@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { onSnapshot } from 'firebase/firestore';
 
 // Configuration Firebase
 const firebaseConfig = {
@@ -14,25 +15,87 @@ const firebaseConfig = {
   measurementId: 'G-NTW1DN98K3'
 };
 
-// Initialisation de l'application Firebase
+// Initialisation de l'application Firebase avec gestion d'erreur
 let app;
 try {
-  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-    } catch {
-      throw new Error('Impossible d\'initialiser Firebase');
-    }
+  if (getApps().length === 0) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
+  }
+} catch (error) {
+  console.error('Erreur d\'initialisation Firebase:', error);
+  throw new Error('Impossible d\'initialiser Firebase');
+}
 
-// Export des services Firebase
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const storage = getStorage(app); 
+export const storage = getStorage(app);
 
-// Vérification de la connexion
+// Système de debouncing pour optimiser les requêtes
+class FirebaseDebouncer {
+  constructor() {
+    this.pendingRequests = new Map();
+    this.debounceTime = 300; // 300ms
+  }
+
+  debounce(key, callback) {
+    if (this.pendingRequests.has(key)) {
+      clearTimeout(this.pendingRequests.get(key));
+    }
+
+    const timeoutId = setTimeout(() => {
+      this.pendingRequests.delete(key);
+      callback();
+    }, this.debounceTime);
+
+    this.pendingRequests.set(key, timeoutId);
+  }
+
+  cancel(key) {
+    if (this.pendingRequests.has(key)) {
+      clearTimeout(this.pendingRequests.get(key));
+      this.pendingRequests.delete(key);
+    }
+  }
+
+  clear() {
+    this.pendingRequests.forEach(timeoutId => clearTimeout(timeoutId));
+    this.pendingRequests.clear();
+  }
+}
+
+export const firebaseDebouncer = new FirebaseDebouncer();
+
+// Optimisation des listeners avec throttling
+export const createThrottledListener = (query, callback, throttleMs = 1000) => {
+  let lastCall = 0;
+  let timeoutId = null;
+
+  return onSnapshot(query, (snapshot) => {
+    const now = Date.now();
+    
+    if (now - lastCall < throttleMs) {
+      if (timeoutId) clearTimeout(timeoutId);
+      
+      timeoutId = setTimeout(() => {
+        callback(snapshot);
+        lastCall = Date.now();
+      }, throttleMs - (now - lastCall));
+    } else {
+      callback(snapshot);
+      lastCall = now;
+    }
+  });
+};
+
+// Vérification de la connexion Firebase
 export const checkFirebaseConnection = async () => {
   try {
     await auth.authStateReady();
     return true;
-  } catch {
+  } catch (error) {
+    console.error('Erreur de connexion Firebase:', error);
     return false;
   }
 }; 

@@ -1,8 +1,8 @@
 // Script pour générer les icônes PWA
 // Note: Ce script nécessite Node.js et Canvas
 
-const fs = require('fs');
-const { createCanvas } = require('canvas');
+import fs from 'fs';
+import { createCanvas } from 'canvas';
 
 const sizes = [16, 32, 72, 96, 128, 144, 152, 192, 384, 512];
 

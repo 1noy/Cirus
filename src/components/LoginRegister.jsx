@@ -140,7 +140,7 @@ export default function LoginRegister({ mode = 'login' }) {
         if (e.code) {
           switch (e.code) {
             case 'auth/email-already-in-use':
-              msg = "Cet email est déjà utilisé. Essayez de vous connecter à la place.";
+              msg = "Cet email est déjà utilisé. Connecte-toi à la place.";
               break;
             case 'auth/invalid-email':
               msg = "L'email n'est pas valide. Vérifiez le format.";
@@ -204,300 +204,372 @@ export default function LoginRegister({ mode = 'login' }) {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      width: '100vw',
+      height: '100vh',
+      background: 'linear-gradient(135deg, #181828 0%, #23234a 100%)',
       display: 'flex',
-      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #23234a 0%, #181828 100%)',
-      color: '#fff',
-      padding: window.innerWidth <= 768 ? '16px' : '32px'
+      padding: window.innerWidth <= 768 ? '16px' : '40px'
     }}>
       <div style={{
-        maxWidth: window.innerWidth <= 768 ? '100%' : 420,
+        background: 'rgba(255, 255, 255, 0.05)',
+        backdropFilter: 'blur(20px)',
+        borderRadius: window.innerWidth <= 768 ? '16px' : '24px',
+        padding: window.innerWidth <= 768 ? '24px' : '40px',
         width: '100%',
-        background: 'linear-gradient(135deg, #23234a 0%, #181828 100%)',
-        borderRadius: window.innerWidth <= 768 ? 16 : 24,
-        boxShadow: '0 8px 48px #1cc6ff33',
-        padding: window.innerWidth <= 768 ? 20 : 32,
-        marginTop: window.innerWidth <= 768 ? 16 : 32,
-        border: '1.5px solid #3ef2ff44'
+        maxWidth: window.innerWidth <= 768 ? '100%' : '400px',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
       }}>
+        <h1 style={{
+          textAlign: 'center',
+          color: '#1cc6ff',
+          fontSize: window.innerWidth <= 768 ? '24px' : '32px',
+          fontWeight: '800',
+          marginBottom: window.innerWidth <= 768 ? '20px' : '32px'
+        }}>
+          Cirus Chat
+        </h1>
+        
+        {/* Onglets */}
         <div style={{
           display: 'flex',
-          justifyContent: 'center',
-          marginBottom: window.innerWidth <= 768 ? 24 : 32,
-          flexDirection: window.innerWidth <= 768 ? 'column' : 'row',
-          gap: window.innerWidth <= 768 ? 8 : 0
+          marginBottom: window.innerWidth <= 768 ? '20px' : '24px',
+          background: 'rgba(255, 255, 255, 0.1)',
+          borderRadius: window.innerWidth <= 768 ? '12px' : '16px',
+          padding: '4px'
         }}>
           <button
+            type="button"
             onClick={() => setTab('login')}
+            aria-label="Se connecter"
+            role="tab"
+            aria-selected={tab === 'login'}
+            tabIndex={tab === 'login' ? 0 : -1}
             style={{
               flex: 1,
-              padding: window.innerWidth <= 768 ? '12px 0' : '14px 0',
-              fontSize: window.innerWidth <= 768 ? 18 : 22,
-              fontWeight: 700,
+              padding: window.innerWidth <= 768 ? '10px 16px' : '12px 24px',
               border: 'none',
-              borderRadius: window.innerWidth <= 768 ? '16px' : '32px 0 0 32px',
-              background: tab === 'login' ? 'linear-gradient(90deg, #1cc6ff 0%, #009fff 100%)' : 'transparent',
-              color: tab === 'login' ? '#fff' : '#a0f0ff',
-              boxShadow: tab === 'login' ? '0 2px 16px #1cc6ff44' : 'none',
+              borderRadius: window.innerWidth <= 768 ? '8px' : '12px',
+              background: tab === 'login' 
+                ? 'linear-gradient(135deg, #1cc6ff 0%, #009fff 100%)'
+                : 'transparent',
+              color: '#fff',
+              fontSize: window.innerWidth <= 768 ? '14px' : '16px',
+              fontWeight: '600',
               cursor: 'pointer',
-              outline: 'none',
-              transition: 'background 0.2s',
+              transition: 'all 0.2s ease',
+              minHeight: window.innerWidth <= 768 ? '44px' : 'auto'
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setTab('login');
+              }
             }}
           >
             Connexion
           </button>
+          
           <button
+            type="button"
             onClick={() => setTab('register')}
+            aria-label="S'inscrire"
+            role="tab"
+            aria-selected={tab === 'register'}
+            tabIndex={tab === 'register' ? 0 : -1}
             style={{
               flex: 1,
-              padding: window.innerWidth <= 768 ? '12px 0' : '14px 0',
-              fontSize: window.innerWidth <= 768 ? 18 : 22,
-              fontWeight: 700,
+              padding: window.innerWidth <= 768 ? '10px 16px' : '12px 24px',
               border: 'none',
-              borderRadius: window.innerWidth <= 768 ? '16px' : '0 32px 32px 0',
-              background: tab === 'register' ? 'linear-gradient(90deg, #fc5c7d 0%, #6a82fb 100%)' : 'transparent',
-              color: tab === 'register' ? '#fff' : '#a0f0ff',
-              boxShadow: tab === 'register' ? '0 2px 16px #fc5c7d44' : 'none',
+              borderRadius: window.innerWidth <= 768 ? '8px' : '12px',
+              background: tab === 'register' 
+                ? 'linear-gradient(135deg, #1cc6ff 0%, #009fff 100%)'
+                : 'transparent',
+              color: '#fff',
+              fontSize: window.innerWidth <= 768 ? '14px' : '16px',
+              fontWeight: '600',
               cursor: 'pointer',
-              outline: 'none',
-              transition: 'background 0.2s',
+              transition: 'all 0.2s ease',
+              minHeight: window.innerWidth <= 768 ? '44px' : 'auto'
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setTab('register');
+              }
             }}
           >
             Inscription
           </button>
         </div>
-
-        {/* Bouton Google */}
-        <button
-          onClick={handleGoogleSignIn}
-          disabled={loadingGoogle}
-          style={{
-            width: '100%',
-            padding: window.innerWidth <= 768 ? '12px 0' : '14px 0',
-            fontSize: window.innerWidth <= 768 ? 16 : 18,
-            fontWeight: 600,
-            border: 'none',
-            borderRadius: window.innerWidth <= 768 ? 10 : 12,
-            background: 'linear-gradient(90deg, #4285f4 0%, #34a853 100%)',
-            color: '#fff',
-            cursor: loadingGoogle ? 'not-allowed' : 'pointer',
-            marginBottom: window.innerWidth <= 768 ? 20 : 24,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: window.innerWidth <= 768 ? 8 : 12,
-            opacity: loadingGoogle ? 0.7 : 1,
-            transition: 'all 0.3s ease',
-            boxShadow: '0 2px 8px rgba(66, 133, 244, 0.3)'
-          }}
-          onMouseEnter={(e) => {
-            if (!loadingGoogle) {
-              e.target.style.transform = 'translateY(-1px)';
-              e.target.style.boxShadow = '0 4px 12px rgba(66, 133, 244, 0.4)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 2px 8px rgba(66, 133, 244, 0.3)';
-          }}
-        >
-          <span style={{ fontSize: window.innerWidth <= 768 ? 18 : 20 }}>🔍</span>
-          {loadingGoogle ? 'Connexion...' : 'Continuer avec Google'}
-        </button>
-
-        <div style={{
-          textAlign: 'center',
-          marginBottom: window.innerWidth <= 768 ? 20 : 24,
-          color: '#a0f0ff',
-          fontSize: window.innerWidth <= 768 ? 12 : 14,
-          position: 'relative'
-        }}>
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: 0,
-            right: 0,
-            height: '1px',
-            background: 'rgba(160, 240, 255, 0.3)'
-          }} />
-          <span style={{
-            background: 'linear-gradient(135deg, #23234a 0%, #181828 100%)',
-            padding: '0 16px',
-            position: 'relative',
-            zIndex: 1
-          }}>
-            ou
-          </span>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: window.innerWidth <= 768 ? 20 : 24 }}>
-            <label style={{
-              color: '#a0f0ff',
-              fontWeight: 600,
-              fontSize: window.innerWidth <= 768 ? 16 : 18,
-              marginBottom: 8,
-              display: 'block'
-            }}>Adresse Email</label>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              background: '#23234a',
-              borderRadius: window.innerWidth <= 768 ? 10 : 12,
-              padding: window.innerWidth <= 768 ? '10px 14px' : '8px 16px',
-              marginBottom: 8
+        
+        {/* Formulaire */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: window.innerWidth <= 768 ? '16px' : '20px' }}>
+          <div>
+            <label htmlFor="email" style={{
+              display: 'block',
+              marginBottom: window.innerWidth <= 768 ? '6px' : '8px',
+              color: '#fff',
+              fontSize: window.innerWidth <= 768 ? '14px' : '16px',
+              fontWeight: '600'
             }}>
-              <span style={{
-                color: '#a0f0ff',
-                fontSize: window.innerWidth <= 768 ? 18 : 20,
-                marginRight: 8
-              }}>✉️</span>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="votre@email.com"
-                style={{
-                  flex: 1,
-                  background: 'none',
-                  border: 'none',
-                  color: '#f7f9fb',
-                  fontSize: window.innerWidth <= 768 ? 16 : 18,
-                  outline: 'none',
-                  padding: 0,
-                }}
-                required
-              />
-            </div>
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="votre@email.com"
+              required
+              aria-label="Adresse email"
+              role="textbox"
+              style={{
+                width: '100%',
+                padding: window.innerWidth <= 768 ? '12px 14px' : '12px 16px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: window.innerWidth <= 768 ? '12px' : '16px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                color: '#fff',
+                fontSize: window.innerWidth <= 768 ? '14px' : '16px',
+                outline: 'none',
+                transition: 'all 0.2s ease',
+                minHeight: window.innerWidth <= 768 ? '44px' : 'auto'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#1cc6ff';
+                e.target.style.background = 'rgba(255, 255, 255, 0.15)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+              }}
+            />
           </div>
-          <div style={{ marginBottom: window.innerWidth <= 768 ? 12 : 16 }}>
-            <label style={{
-              color: '#a0f0ff',
-              fontWeight: 600,
-              fontSize: window.innerWidth <= 768 ? 16 : 18,
-              marginBottom: 8,
-              display: 'block'
-            }}>Mot de passe</label>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              background: '#23234a',
-              borderRadius: window.innerWidth <= 768 ? 10 : 12,
-              padding: window.innerWidth <= 768 ? '10px 14px' : '8px 16px'
+          
+          <div>
+            <label htmlFor="password" style={{
+              display: 'block',
+              marginBottom: window.innerWidth <= 768 ? '6px' : '8px',
+              color: '#fff',
+              fontSize: window.innerWidth <= 768 ? '14px' : '16px',
+              fontWeight: '600'
             }}>
-              <span style={{
-                color: '#a0f0ff',
-                fontSize: window.innerWidth <= 768 ? 18 : 20,
-                marginRight: 8
-              }}>🔒</span>
+              Mot de passe
+            </label>
+            <div style={{ position: 'relative' }}>
               <input
+                id="password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                style={{
-                  flex: 1,
-                  background: 'none',
-                  border: 'none',
-                  color: '#f7f9fb',
-                  fontSize: window.innerWidth <= 768 ? 16 : 18,
-                  outline: 'none',
-                  padding: 0,
-                }}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Votre mot de passe"
                 required
+                aria-label="Mot de passe"
+                role="textbox"
+                style={{
+                  width: '100%',
+                  padding: window.innerWidth <= 768 ? '12px 14px' : '12px 16px',
+                  paddingRight: window.innerWidth <= 768 ? '48px' : '48px',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: window.innerWidth <= 768 ? '12px' : '16px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  color: '#fff',
+                  fontSize: window.innerWidth <= 768 ? '14px' : '16px',
+                  outline: 'none',
+                  transition: 'all 0.2s ease',
+                  minHeight: window.innerWidth <= 768 ? '44px' : 'auto'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#1cc6ff';
+                  e.target.style.background = 'rgba(255, 255, 255, 0.15)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                  e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+                }}
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(v => !v)}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                role="button"
+                tabIndex={0}
                 style={{
+                  position: 'absolute',
+                  right: window.innerWidth <= 768 ? '12px' : '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
                   background: 'none',
                   border: 'none',
-                  color: '#a0f0ff',
-                  fontSize: window.innerWidth <= 768 ? 18 : 20,
+                  color: 'rgba(255, 255, 255, 0.7)',
                   cursor: 'pointer',
-                  marginLeft: 8
+                  fontSize: window.innerWidth <= 768 ? '16px' : '18px',
+                  padding: '4px',
+                  borderRadius: '4px',
+                  transition: 'all 0.2s ease',
+                  minWidth: window.innerWidth <= 768 ? '44px' : 'auto',
+                  minHeight: window.innerWidth <= 768 ? '44px' : 'auto'
+                }}
+                onMouseEnter={(e) => e.target.style.color = '#fff'}
+                onMouseLeave={(e) => e.target.style.color = 'rgba(255, 255, 255, 0.7)'}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setShowPassword(!showPassword);
+                  }
                 }}
               >
-                {showPassword ? '🙈' : '👁️'}
+                {showPassword ? '👁️' : '👁️‍🗨️'}
               </button>
             </div>
-            {tab === 'login' && (
-              <div style={{ textAlign: 'right', marginTop: 8 }}>
-                <button
-                  type="button"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#3ef2ff',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontSize: window.innerWidth <= 768 ? 14 : 16
-                  }}
-                  onClick={handleForgotPassword}
-                >
-                  Mot de passe oublié ?
-                </button>
-              </div>
-            )}
           </div>
-          {loadingAuth && (
-            <div style={{
-              color: '#3ef2ff',
-              fontWeight: 700,
-              fontSize: window.innerWidth <= 768 ? 16 : 18,
-              textAlign: 'center',
-              marginBottom: window.innerWidth <= 768 ? 12 : 16
-            }}>
-              {tab === 'login' ? 'Connexion en cours…' : 'Inscription en cours…'}
-            </div>
-          )}
+          
           <button
             type="submit"
             disabled={loadingAuth}
+            aria-label={tab === 'login' ? "Se connecter" : "S'inscrire"}
+            role="button"
+            tabIndex={0}
             style={{
               width: '100%',
-              padding: window.innerWidth <= 768 ? '12px 0' : '14px 0',
-              fontSize: window.innerWidth <= 768 ? 18 : 22,
-              fontWeight: 700,
+              padding: window.innerWidth <= 768 ? '14px 20px' : '14px 24px',
               border: 'none',
-              borderRadius: window.innerWidth <= 768 ? 12 : 16,
-              background: tab === 'login'
-                ? 'linear-gradient(90deg, #1cc6ff 0%, #009fff 100%)'
-                : 'linear-gradient(90deg, #fc5c7d 0%, #6a82fb 100%)',
+              borderRadius: window.innerWidth <= 768 ? '12px' : '16px',
+              background: 'linear-gradient(135deg, #1cc6ff 0%, #009fff 100%)',
               color: '#fff',
-              boxShadow: '0 2px 16px #1cc6ff44',
+              fontSize: window.innerWidth <= 768 ? '16px' : '18px',
+              fontWeight: '700',
               cursor: loadingAuth ? 'not-allowed' : 'pointer',
-              outline: 'none',
-              marginTop: window.innerWidth <= 768 ? 12 : 16,
-              transition: 'all 0.2s',
-              opacity: loadingAuth ? 0.7 : 1,
+              transition: 'all 0.2s ease',
+              opacity: loadingAuth ? 0.6 : 1,
+              minHeight: window.innerWidth <= 768 ? '48px' : 'auto',
+              position: 'relative'
+            }}
+            onMouseEnter={(e) => {
+              if (!loadingAuth) {
+                e.target.style.transform = 'translateY(-1px)';
+                e.target.style.boxShadow = '0 4px 12px rgba(28, 198, 255, 0.3)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = 'none';
+            }}
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && !loadingAuth) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
             }}
           >
-            {tab === 'login' ? 'Se connecter' : 'S\'inscrire'}
+            {loadingAuth ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <div style={{
+                  width: '16px',
+                  height: '16px',
+                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                  borderTop: '2px solid #fff',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }} />
+                {tab === 'login' ? 'Connexion...' : 'Inscription...'}
+              </div>
+            ) : (
+              tab === 'login' ? 'Se connecter' : "S'inscrire"
+            )}
           </button>
-          {!loadingAuth && retry > 0 && (
+          
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={loadingAuth}
+            aria-label="Se connecter avec Google"
+            role="button"
+            tabIndex={0}
+            style={{
+              width: '100%',
+              padding: window.innerWidth <= 768 ? '14px 20px' : '14px 24px',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: window.innerWidth <= 768 ? '12px' : '16px',
+              background: 'rgba(255, 255, 255, 0.1)',
+              color: '#fff',
+              fontSize: window.innerWidth <= 768 ? '16px' : '18px',
+              fontWeight: '600',
+              cursor: loadingAuth ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+              opacity: loadingAuth ? 0.6 : 1,
+              minHeight: window.innerWidth <= 768 ? '48px' : 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            onMouseEnter={(e) => {
+              if (!loadingAuth) {
+                e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+            }}
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && !loadingAuth) {
+                e.preventDefault();
+                handleGoogleSignIn();
+              }
+            }}
+          >
+            {loadingAuth ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <div style={{
+                  width: '16px',
+                  height: '16px',
+                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                  borderTop: '2px solid #fff',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }} />
+                Connexion...
+              </div>
+            ) : (
+              <>
+                <span style={{ fontSize: window.innerWidth <= 768 ? '18px' : '20px' }}>🔍</span>
+                Se connecter avec Google
+              </>
+            )}
+          </button>
+          
+          {tab === 'login' && (
             <button
               type="button"
-              onClick={() => {
-                setRetry(r => r + 1);
-                handleSubmit(new Event('submit'));
-              }}
+              onClick={handleForgotPassword}
+              aria-label="Mot de passe oublié"
+              role="button"
+              tabIndex={0}
               style={{
-                background: 'linear-gradient(90deg, #3ef2ff 0%, #2196f3 100%)',
-                color: '#23234a',
+                background: 'none',
                 border: 'none',
-                borderRadius: 8,
-                padding: window.innerWidth <= 768 ? '8px 20px' : '10px 28px',
-                fontSize: window.innerWidth <= 768 ? 15 : 17,
-                fontWeight: 600,
+                color: '#1cc6ff',
+                fontSize: window.innerWidth <= 768 ? '14px' : '16px',
                 cursor: 'pointer',
-                marginTop: 12
+                textDecoration: 'underline',
+                transition: 'all 0.2s ease',
+                padding: window.innerWidth <= 768 ? '8px' : '12px',
+                minHeight: window.innerWidth <= 768 ? '44px' : 'auto'
+              }}
+              onMouseEnter={(e) => e.target.style.color = '#009fff'}
+              onMouseLeave={(e) => e.target.style.color = '#1cc6ff'}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleForgotPassword();
+                }
               }}
             >
-              Réessayer
+              Mot de passe oublié ?
             </button>
           )}
         </form>
