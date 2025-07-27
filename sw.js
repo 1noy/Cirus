@@ -5,15 +5,15 @@ const API_CACHE = 'api-v3';
 
 // Assets statiques critiques
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/favicon.svg',
-  '/manifest.json'
+  '/Cirus/',
+  '/Cirus/index.html',
+  '/Cirus/favicon.svg',
+  '/Cirus/manifest.json'
 ];
 
 // Assets dynamiques (lazy load)
 const DYNAMIC_ASSETS = [
-  '/audio-worker.js'
+  '/Cirus/audio-worker.js'
 ];
 
 // Patterns pour les caches
@@ -115,33 +115,26 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Interception des requêtes
+// Gestion des requêtes fetch
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   
-  // Ignorer les requêtes non-GET
-  if (request.method !== 'GET') {
-    return;
-  }
-  
-  // Ignorer les requêtes Firebase/Google API
-  if (url.hostname.includes('firebase') || 
+  // Ignorer les requêtes non-GET et les requêtes vers Firebase/Google API
+  if (request.method !== 'GET' || 
+      url.hostname.includes('firebase') || 
       url.hostname.includes('googleapis.com') ||
       url.hostname.includes('google.com')) {
     return;
   }
   
-  // Stratégie selon le type de ressource
+  // Appliquer les stratégies de cache selon le pattern
   if (CACHE_PATTERNS.static.test(url.pathname)) {
     event.respondWith(CACHE_STRATEGIES.cacheFirst(request));
   } else if (CACHE_PATTERNS.api.test(url.pathname)) {
     event.respondWith(CACHE_STRATEGIES.networkFirst(request));
-  } else if (CACHE_PATTERNS.dynamic.test(url.pathname)) {
-    event.respondWith(CACHE_STRATEGIES.staleWhileRevalidate(request));
   } else {
-    // Stratégie par défaut : network-first
-    event.respondWith(CACHE_STRATEGIES.networkFirst(request));
+    event.respondWith(CACHE_STRATEGIES.staleWhileRevalidate(request));
   }
 });
 
