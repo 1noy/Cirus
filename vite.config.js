@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { compression } from 'vite-plugin-compression2';
+import viteCompression from 'vite-plugin-compression';
 
 export default defineConfig({
   plugins: [
@@ -11,13 +11,13 @@ export default defineConfig({
         plugins: ['@emotion/babel-plugin']
       }
     }),
-    compression({
+    viteCompression({
       algorithm: 'gzip',
-      exclude: [/\.(br)$/, /\.(gz)$/]
+      ext: '.gz'
     }),
-    compression({
+    viteCompression({
       algorithm: 'brotliCompress',
-      exclude: [/\.(br)$/, /\.(gz)$/]
+      ext: '.br'
     })
   ],
   build: {
