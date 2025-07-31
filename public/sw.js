@@ -1,255 +1,111 @@
-const CACHE_NAME = 'chat-changing-v3';
-const STATIC_CACHE = 'static-v3';
-const DYNAMIC_CACHE = 'dynamic-v3';
-const API_CACHE = 'api-v3';
+// Service Worker pour CirusChat PWA
+const CACHE_NAME = 'cirus-chat-v1.0.1';
+const STATIC_CACHE = 'static-v1.0.1';
+const DYNAMIC_CACHE = 'dynamic-v1.0.1';
 
-// Assets statiques critiques
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/favicon.svg',
+  '/icon-192x192.png',
+  '/icon-512x512.png',
+  '/offline.html'
+];
+
 const STATIC_ASSETS = [
-  '/Cirus/',
-  '/Cirus/index.html',
-  '/Cirus/favicon.svg',
-  '/Cirus/manifest.json'
+  '/src/styles/cyberpunk.css',
+  '/src/styles/global.css'
 ];
-
-// Assets dynamiques (lazy load)
-const DYNAMIC_ASSETS = [
-  '/Cirus/audio-worker.js'
-];
-
-// Patterns pour les caches
-const CACHE_PATTERNS = {
-  static: /\.(js|css|svg|png|jpg|jpeg|webp|avif|woff|woff2|ttf|eot)$/,
-  dynamic: /\.(json|xml|txt)$/,
-  api: /\/api\//
-};
-
-// Stratégies de cache
-const CACHE_STRATEGIES = {
-  // Cache-first pour les assets statiques
-  cacheFirst: async (request) => {
-    const cache = await caches.open(STATIC_CACHE);
-    const cachedResponse = await cache.match(request);
-    
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    
-    try {
-      const networkResponse = await fetch(request);
-      if (networkResponse.status === 200) {
-        await cache.put(request, networkResponse.clone());
-      }
-      return networkResponse;
-    } catch (error) {
-      console.warn('Cache-first failed:', error);
-      return new Response('Offline content not available', { status: 503 });
-    }
-  },
-
-  // Network-first pour les API
-  networkFirst: async (request) => {
-    const cache = await caches.open(API_CACHE);
-    
-    try {
-      const networkResponse = await fetch(request);
-      if (networkResponse.status === 200) {
-        await cache.put(request, networkResponse.clone());
-      }
-      return networkResponse;
-    } catch (error) {
-      const cachedResponse = await cache.match(request);
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      throw error;
-    }
-  },
-
-  // Stale-while-revalidate pour les assets dynamiques
-  staleWhileRevalidate: async (request) => {
-    const cache = await caches.open(DYNAMIC_CACHE);
-    const cachedResponse = await cache.match(request);
-    
-    const fetchPromise = fetch(request).then(async (networkResponse) => {
-      if (networkResponse.status === 200) {
-        await cache.put(request, networkResponse.clone());
-      }
-      return networkResponse;
-    }).catch(() => cachedResponse);
-    
-    return cachedResponse || fetchPromise;
-  }
-};
 
 // Installation du Service Worker
 self.addEventListener('install', (event) => {
   event.waitUntil(
     Promise.all([
-      caches.open(STATIC_CACHE).then(cache => cache.addAll(STATIC_ASSETS)),
-      caches.open(DYNAMIC_CACHE).then(cache => cache.addAll(DYNAMIC_ASSETS))
-    ]).then(() => {
-      console.log('Service Worker installed successfully');
-      return self.skipWaiting();
+      caches.open(STATIC_CACHE).then((cache) => {
+        console.log('Cache statique ouvert');
+        return cache.addAll(urlsToCache);
+      }),
+      caches.open(DYNAMIC_CACHE).then((cache) => {
+        console.log('Cache dynamique ouvert');
+        return cache.addAll(STATIC_ASSETS);
+      })
+    ]).catch((error) => {
+      console.error('Erreur lors de l\'installation du cache:', error);
     })
   );
 });
 
-// Activation et nettoyage des anciens caches
+// Activation du Service Worker
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== STATIC_CACHE && 
-              cacheName !== DYNAMIC_CACHE && 
-              cacheName !== API_CACHE) {
-            console.log('Deleting old cache:', cacheName);
+        cacheNames.map((cacheName) => {
+          if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
+            console.log('Suppression de l\'ancien cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => {
-      console.log('Service Worker activated');
-      return self.clients.claim();
     })
   );
 });
 
-// Gestion des requêtes fetch
+// Interception des requêtes réseau
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-  
-  // Ignorer les requêtes non-GET et les requêtes vers Firebase/Google API
-  if (request.method !== 'GET' || 
-      url.hostname.includes('firebase') || 
-      url.hostname.includes('googleapis.com') ||
-      url.hostname.includes('google.com')) {
-    return;
-  }
-  
-  // Appliquer les stratégies de cache selon le pattern
-  if (CACHE_PATTERNS.static.test(url.pathname)) {
-    event.respondWith(CACHE_STRATEGIES.cacheFirst(request));
-  } else if (CACHE_PATTERNS.api.test(url.pathname)) {
-    event.respondWith(CACHE_STRATEGIES.networkFirst(request));
-  } else {
-    event.respondWith(CACHE_STRATEGIES.staleWhileRevalidate(request));
-  }
-});
 
-// Gestion des notifications push
-self.addEventListener('push', (event) => {
-  const options = {
-    body: event.data ? event.data.text() : 'Nouveau message reçu',
-    icon: '/favicon.svg',
-    badge: '/favicon.svg',
-    vibrate: [100, 50, 100],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: 1
-    },
-    actions: [
-      {
-        action: 'explore',
-        title: 'Voir le message',
-        icon: '/favicon.svg'
-      },
-      {
-        action: 'close',
-        title: 'Fermer',
-        icon: '/favicon.svg'
-      }
-    ],
-    requireInteraction: false,
-    silent: false,
-    tag: 'chat-message'
-  };
+  // Stratégie de cache pour les ressources statiques
+  if (request.method === 'GET') {
+    event.respondWith(
+      caches.match(request)
+        .then((response) => {
+          if (response) {
+            return response;
+          }
 
-  event.waitUntil(
-    self.registration.showNotification('Cirus Chat', options)
-  );
-});
+          return fetch(request)
+            .then((response) => {
+              // Vérifier si la réponse est valide
+              if (!response || response.status !== 200) {
+                return response;
+              }
 
-// Gestion des clics sur les notifications
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
+              // Cloner la réponse pour la mettre en cache
+              const responseToCache = response.clone();
 
-  if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow('/')
-    );
-  } else if (event.action === 'close') {
-    // Fermer la notification
-    return;
-  } else {
-    // Action par défaut
-    event.waitUntil(
-      clients.openWindow('/')
+              // Choisir le cache approprié selon le type de ressource
+              const cacheName = isStaticAsset(request.url) ? STATIC_CACHE : DYNAMIC_CACHE;
+              
+              caches.open(cacheName)
+                .then((cache) => {
+                  cache.put(request, responseToCache);
+                });
+
+              return response;
+            })
+            .catch(() => {
+              // En cas d'erreur réseau, retourner la page offline
+              if (request.mode === 'navigate') {
+                return caches.match('/offline.html');
+              }
+            });
+        })
     );
   }
 });
 
-// Synchronisation en arrière-plan
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
-    event.waitUntil(
-      // Synchroniser les messages en attente
-      syncMessages()
-    );
-  }
-});
-
-// Fonction de synchronisation des messages
-async function syncMessages() {
-  try {
-    const cache = await caches.open('pending-messages');
-    const requests = await cache.keys();
-    
-    for (const request of requests) {
-      try {
-        const response = await fetch(request);
-        if (response.ok) {
-          await cache.delete(request);
-        }
-      } catch (error) {
-        console.warn('Failed to sync message:', error);
-      }
-    }
-  } catch (error) {
-    console.error('Sync failed:', error);
-  }
+// Fonction pour déterminer si une ressource est statique
+function isStaticAsset(url) {
+  const staticExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf'];
+  return staticExtensions.some(ext => url.includes(ext));
 }
 
-// Nettoyage périodique des caches
-self.addEventListener('periodicsync', (event) => {
-  if (event.tag === 'cache-cleanup') {
-    event.waitUntil(cleanupCache());
+// Gestion des messages du Service Worker
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
-});
-
-// Fonction de nettoyage des caches
-async function cleanupCache() {
-  try {
-    const cacheNames = await caches.keys();
-    const now = Date.now();
-    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 jours
-    
-    for (const cacheName of cacheNames) {
-      const cache = await caches.open(cacheName);
-      const requests = await cache.keys();
-      
-      for (const request of requests) {
-        const response = await cache.match(request);
-        if (response) {
-          const date = response.headers.get('date');
-          if (date && (now - new Date(date).getTime()) > maxAge) {
-            await cache.delete(request);
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Cache cleanup failed:', error);
-  }
-} 
+}); 

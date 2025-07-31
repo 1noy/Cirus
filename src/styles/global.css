@@ -1,795 +1,472 @@
+/* Variables CSS - Style Facebook */
+:root {
+  --facebook-blue: #1877f2;
+  --facebook-blue-dark: #166fe5;
+  --facebook-blue-light: #42a5f5;
+  --facebook-green: #42b72a;
+  --facebook-green-dark: #36a420;
+  
+  --background-primary: #ffffff;
+  --background-secondary: #f0f2f5;
+  --background-tertiary: #e4e6eb;
+  
+  --text-primary: #1c1e21;
+  --text-secondary: #65676b;
+  --text-muted: #8e8e93;
+  --text-light: #ffffff;
+  
+  --border-color: #dddfe2;
+  --border-dark: #ccd0d5;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
 /* Reset et base */
 * {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-  font-size: 16px;
-}
-
 body {
-  margin: 0;
-  padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-sans);
+  background: var(--background-secondary);
+  color: var(--text-primary);
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #181828 0%, #23234a 100%);
-  color: #fff;
-  overflow-x: hidden;
-  line-height: 1.6;
 }
 
-/* Variables CSS pour les animations */
-:root {
-  --animation-duration: 0.3s;
-  --animation-timing: cubic-bezier(0.4, 0, 0.2, 1);
-  --primary-color: #1cc6ff;
-  --secondary-color: #009fff;
-  --success-color: #4caf50;
-  --error-color: #f44336;
-  --warning-color: #ff9800;
-  --info-color: #2196f3;
-}
-
-/* Optimisations pour les animations */
-.animate-fade-in {
-  animation: fadeInMsg var(--animation-duration) ease-out;
-  will-change: opacity, transform;
-}
-
-.animate-modal {
-  animation: fadeInModal calc(var(--animation-duration) * 0.7) ease-out;
-  will-change: opacity, transform;
-}
-
-.animate-slide-up {
-  animation: slideInUp calc(var(--animation-duration) * 1.3) ease-out;
-  will-change: opacity, transform;
-}
-
-/* Optimisations pour les transitions */
-.transition-all {
-  transition: all var(--animation-duration) var(--animation-timing);
-  will-change: transform, opacity;
-}
-
-.transition-transform {
-  transition: transform calc(var(--animation-duration) * 0.7) ease-out;
-  will-change: transform;
-}
-
-/* Optimisations pour les scrolls */
-.scroll-container {
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-}
-
-.scroll-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.scroll-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.scroll-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
-}
-
-.scroll-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
-}
-
-/* Optimisations pour les images */
-img {
-  max-width: 100%;
-  height: auto;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  object-fit: cover;
-}
-
-img.lazy {
-    opacity: 0;
-  transition: opacity var(--animation-duration) ease-in;
-  }
-
-img.lazy.loaded {
-    opacity: 1;
-}
-
-/* Optimisations pour les boutons */
-button {
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  cursor: pointer;
-  border: none;
-  outline: none;
-  transition: all var(--animation-duration) var(--animation-timing);
-}
-
-button:focus-visible {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 2px;
-}
-
-/* Optimisations pour les inputs */
-input, textarea {
-  -webkit-appearance: none;
-  border-radius: 0;
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-}
-
-input:focus, textarea:focus {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 2px;
-}
-
-/* Optimisations pour les focus */
-*:focus {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 2px;
-}
-
-/* Navigation au clavier */
-.keyboard-navigation *:focus {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 2px;
-}
-
-/* Optimisations pour la sélection */
-::selection {
-  background: rgba(28, 198, 255, 0.3);
-  color: #fff;
-}
-
-::-moz-selection {
-  background: rgba(28, 198, 255, 0.3);
-  color: #fff;
-}
-
-/* Optimisations pour les animations */
-@keyframes fadeInMsg {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInModal {
-  from {
-    opacity: 0;
-    transform: scale(0.9) translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200px 0;
-  }
-  100% {
-    background-position: calc(200px + 100%) 0;
-  }
-}
-
-/* Optimisations pour les performances */
-.performance-optimized {
-  will-change: transform, opacity;
-  contain: layout, style, paint;
-}
-
-/* Optimisations pour l'accessibilité */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* Optimisations pour les écrans larges */
-@media (min-width: 1200px) {
-  body {
-    font-size: 18px;
-  }
-}
-
-/* Optimisations pour les écrans mobiles */
-@media (max-width: 768px) {
-  body {
-    font-size: 14px;
-    -webkit-text-size-adjust: 100%;
-    -ms-text-size-adjust: 100%;
-  }
-  
-  .scroll-container::-webkit-scrollbar {
-    width: 4px;
-  }
-  
-  /* Optimisations pour les boutons mobiles */
-  button {
-    min-height: 44px;
-    min-width: 44px;
-    padding: 12px 16px;
-    font-size: 16px;
-    touch-action: manipulation;
-  }
-
-  /* Optimisations pour les inputs mobiles */
-  input, textarea {
-    font-size: 16px;
-    padding: 12px 16px;
-    min-height: 44px;
-  }
-
-  /* Optimisations pour les modales mobiles */
-  .modal-backdrop {
-    padding: 16px;
-  }
-  
-  /* Optimisations pour les messages mobiles */
-  .message-bubble {
-    max-width: 85%;
-    padding: 10px 14px;
-    font-size: 14px;
-  }
-  
-  /* Optimisations pour les formulaires mobiles */
-  .form-input {
-    font-size: 16px;
-    padding: 14px 16px;
-  }
-  
-  /* Optimisations pour les boutons d'action mobiles */
-  .btn {
-    padding: 14px 20px;
-    font-size: 16px;
-    min-height: 48px;
-  }
-  
-  /* Optimisations pour les avatars mobiles */
-  .avatar {
-    width: 40px;
-    height: 40px;
-  }
-  
-  /* Optimisations pour les tooltips mobiles */
-  .tooltip::after {
-    display: none;
-  }
-  
-  /* Optimisations pour les grilles mobiles */
-  .grid-2, .grid-3, .grid-4 {
-    grid-template-columns: 1fr;
-  }
-  
-  /* Optimisations pour les espacements mobiles */
-  .mt-1, .mb-1, .ml-1, .mr-1 { margin: 4px; }
-  .mt-2, .mb-2, .ml-2, .mr-2 { margin: 8px; }
-  .mt-3, .mb-3, .ml-3, .mr-3 { margin: 12px; }
-  .mt-4, .mb-4, .ml-4, .mr-4 { margin: 16px; }
-  
-  .p-1 { padding: 8px; }
-  .p-2 { padding: 12px; }
-  .p-3 { padding: 16px; }
-  .p-4 { padding: 20px; }
-}
-
-/* Optimisations pour les très petits écrans */
-@media (max-width: 480px) {
-  body {
-    font-size: 13px;
-  }
-  
-  button {
-    min-height: 48px;
-    padding: 14px 18px;
-    font-size: 16px;
-  }
-  
-  input, textarea {
-    font-size: 16px;
-    padding: 16px 18px;
-    min-height: 48px;
-  }
-  
-  .btn {
-    padding: 16px 24px;
-    font-size: 16px;
-    min-height: 52px;
-  }
-  
-  .message-bubble {
-    max-width: 90%;
-    padding: 12px 16px;
-    font-size: 13px;
-  }
-  
-  .avatar {
-    width: 36px;
-    height: 36px;
-  }
-  
-  /* Optimisations pour les marges très petites */
-  .mt-1, .mb-1, .ml-1, .mr-1 { margin: 2px; }
-  .mt-2, .mb-2, .ml-2, .mr-2 { margin: 4px; }
-  .mt-3, .mb-3, .ml-3, .mr-3 { margin: 8px; }
-  .mt-4, .mb-4, .ml-4, .mr-4 { margin: 12px; }
-  
-  .p-1 { padding: 6px; }
-  .p-2 { padding: 10px; }
-  .p-3 { padding: 14px; }
-  .p-4 { padding: 18px; }
-}
-
-/* Optimisations pour les écrans tactiles */
-@media (hover: none) and (pointer: coarse) {
-  button, input, textarea {
-    min-height: 44px;
-    min-width: 44px;
-    font-size: 16px;
-  }
-  
-  /* Amélioration du feedback tactile */
-  button:active {
-    transform: scale(0.98);
-  }
-  
-  /* Optimisation du scroll tactile */
-  .scroll-container {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-  }
-  
-  /* Désactivation des hover sur mobile */
-  button:hover,
-  input:hover,
-  textarea:hover {
-    transform: none;
-  }
-}
-
-/* Optimisations pour l'orientation paysage sur mobile */
-@media (max-width: 768px) and (orientation: landscape) {
-  body {
-    font-size: 13px;
-  }
-  
-  .modal-backdrop {
-    padding: 8px;
-  }
-  
-  button {
-    min-height: 40px;
-    padding: 10px 14px;
-  }
-  
-  input, textarea {
-    min-height: 40px;
-    padding: 10px 14px;
-  }
-}
-
-/* Optimisations pour les écrans haute densité */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  img {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-  }
-  
-  /* Amélioration de la netteté des textes */
-  body {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-}
-
-/* Optimisations pour les écrans sombres */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --primary-color: #1cc6ff;
-    --secondary-color: #009fff;
-  }
-}
-
-/* Optimisations pour l'impression */
-@media print {
-  * {
-    background: transparent !important;
-    color: black !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-  }
-  
-  body {
-    background: white !important;
-  }
-}
-
-/* Optimisations pour les lecteurs d'écran */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* Optimisations pour les animations de chargement */
-.loading-skeleton {
-  background: linear-gradient(90deg, 
-    rgba(255, 255, 255, 0.1) 25%, 
-    rgba(255, 255, 255, 0.2) 50%, 
-    rgba(255, 255, 255, 0.1) 75%);
-  background-size: 200px 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-/* Optimisations pour les notifications */
-.notification-enter {
-  opacity: 0;
-  transform: translateY(-20px);
-}
-
-.notification-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: all var(--animation-duration) var(--animation-timing);
-}
-
-.notification-exit {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.notification-exit-active {
-  opacity: 0;
-  transform: translateY(-20px);
-  transition: all var(--animation-duration) var(--animation-timing);
-}
-
-/* Optimisations pour les modales */
-.modal-backdrop {
-    backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-/* Optimisations pour les tooltips */
-.tooltip {
-  position: relative;
-}
-
-.tooltip::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--animation-duration) ease;
-    z-index: 1000;
-  }
-
-.tooltip:hover::after {
-  opacity: 1;
-}
-
-/* Optimisations pour les badges */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  background: var(--error-color);
-  color: white;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1;
-}
-
-/* Optimisations pour les avatars */
-.avatar {
-  border-radius: 50%;
-  object-fit: cover;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-}
-
-.avatar-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  color: white;
-  font-weight: 600;
-  border-radius: 50%;
-}
-
-/* Optimisations pour les statuts */
-.status-online {
-  background: var(--success-color);
-}
-
-.status-offline {
-  background: #666;
-}
-
-.status-away {
-  background: var(--warning-color);
-}
-
-/* Optimisations pour les messages */
-.message-bubble {
-  position: relative;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-
-.message-bubble::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -8px;
-  width: 0;
-  height: 0;
-  border: 8px solid transparent;
-  border-right-color: inherit;
-  border-left: 0;
-  margin-top: 12px;
-}
-
-.message-bubble.own::before {
-  left: auto;
-  right: -8px;
-  border-right: 0;
-  border-left: 8px solid transparent;
-  border-left-color: inherit;
-}
-
-/* Optimisations pour les formulaires */
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.form-input {
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  font-size: 16px;
-  transition: all var(--animation-duration) var(--animation-timing);
-}
-
-.form-input:focus {
-  border-color: var(--primary-color);
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 0 3px rgba(28, 198, 255, 0.1);
-}
-
-.form-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-/* Optimisations pour les boutons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all var(--animation-duration) var(--animation-timing);
-  border: none;
-  outline: none;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  color: white;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(28, 198, 255, 0.3);
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-/* Optimisations pour les icônes */
-.icon {
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  vertical-align: middle;
-  fill: currentColor;
-}
-
-/* Optimisations pour les grilles */
-.grid {
-  display: grid;
-  gap: 20px;
-}
-
-.grid-2 {
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-}
-
-.grid-3 {
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-}
-
-.grid-4 {
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-}
-
-/* Optimisations pour les flexbox */
-.flex {
-  display: flex;
-}
-
-.flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.flex-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.flex-column {
+/* Layout principal */
+.app {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-/* Optimisations pour les espacements */
-.mt-1 { margin-top: 8px; }
-.mt-2 { margin-top: 16px; }
-.mt-3 { margin-top: 24px; }
-.mt-4 { margin-top: 32px; }
+/* Page de connexion style Facebook */
+.facebook-auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background-secondary);
+  padding: 20px;
+}
 
-.mb-1 { margin-bottom: 8px; }
-.mb-2 { margin-bottom: 16px; }
-.mb-3 { margin-bottom: 24px; }
-.mb-4 { margin-bottom: 32px; }
+.facebook-auth-container {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
 
-.ml-1 { margin-left: 8px; }
-.ml-2 { margin-left: 16px; }
-.ml-3 { margin-left: 24px; }
-.ml-4 { margin-left: 32px; }
+/* Section gauche - Logo et texte */
+.facebook-hero {
+  color: var(--text-primary);
+  text-align: left;
+}
 
-.mr-1 { margin-right: 8px; }
-.mr-2 { margin-right: 16px; }
-.mr-3 { margin-right: 24px; }
-.mr-4 { margin-right: 32px; }
+.facebook-logo {
+  color: var(--facebook-blue);
+  font-size: 4rem;
+  font-weight: 700;
+  margin-bottom: 0;
+  line-height: 1;
+}
 
-.p-1 { padding: 8px; }
-.p-2 { padding: 16px; }
-.p-3 { padding: 24px; }
-.p-4 { padding: 32px; }
+.facebook-hero h2 {
+  font-size: 1.75rem;
+  font-weight: 400;
+  line-height: 1.3;
+  margin-bottom: 0;
+  color: var(--text-primary);
+}
 
-/* Optimisations pour les utilitaires */
-.text-center { text-align: center; }
-.text-left { text-align: left; }
-.text-right { text-align: right; }
+/* Section droite - Formulaire */
+.facebook-form-container {
+  background: var(--background-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 20px;
+  width: 100%;
+  max-width: 396px;
+}
 
-.text-sm { font-size: 14px; }
-.text-base { font-size: 16px; }
-.text-lg { font-size: 18px; }
-.text-xl { font-size: 20px; }
+.facebook-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
-.font-normal { font-weight: 400; }
-.font-medium { font-weight: 500; }
-.font-semibold { font-weight: 600; }
-.font-bold { font-weight: 700; }
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
-.rounded { border-radius: 8px; }
-.rounded-full { border-radius: 50%; }
+.form-group label {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
 
-.shadow { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-.shadow-lg { box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); }
+.form-input {
+  position: relative;
+}
 
-.opacity-50 { opacity: 0.5; }
-.opacity-75 { opacity: 0.75; }
+.form-input input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  background: var(--background-primary);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  font-family: var(--font-sans);
+}
 
-.hidden { display: none; }
-.block { display: block; }
-.inline { display: inline; }
-.inline-block { display: inline-block; }
+.form-input input:focus {
+  outline: none;
+  border-color: var(--facebook-blue);
+  box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2);
+}
 
-.w-full { width: 100%; }
-.h-full { height: 100%; }
+.form-input input.error {
+  border-color: #fa383e;
+}
 
-.overflow-hidden { overflow: hidden; }
-.overflow-auto { overflow: auto; }
+.form-input input::placeholder {
+  color: var(--text-muted);
+}
 
-.position-relative { position: relative; }
-.position-absolute { position: absolute; }
-.position-fixed { position: fixed; }
+.password-input {
+  position: relative;
+}
 
-.z-10 { z-index: 10; }
-.z-20 { z-index: 20; }
-.z-30 { z-index: 30; }
-.z-40 { z-index: 40; }
-.z-50 { z-index: 50; } 
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: var(--text-secondary);
+}
+
+.error-text {
+  color: #fa383e;
+  font-size: 0.8125rem;
+  margin-top: 4px;
+}
+
+/* Boutons style Facebook */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  font-family: var(--font-sans);
+  width: 100%;
+}
+
+.btn-primary {
+  background: var(--facebook-blue);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--facebook-blue-dark);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: var(--facebook-green);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--facebook-green-dark);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-google {
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-google:hover:not(:disabled) {
+  background: var(--background-secondary);
+  box-shadow: var(--shadow-md);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Actions du formulaire */
+.auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.divider span {
+  padding: 0 16px;
+  background: var(--background-primary);
+}
+
+.forgot-link {
+  text-align: center;
+  color: var(--facebook-blue);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 16px;
+  transition: color 0.2s ease;
+}
+
+.forgot-link:hover {
+  color: var(--facebook-blue-dark);
+  text-decoration: underline;
+}
+
+/* Tabs style Facebook */
+.auth-tabs {
+  display: flex;
+  background: var(--background-tertiary);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+}
+
+.auth-tab.active {
+  background: var(--background-primary);
+  color: var(--facebook-blue);
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-tab:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Header du formulaire */
+.auth-form-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.auth-form-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.auth-form-header p {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Boutons de test */
+.test-buttons {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.test-btn {
+  background: var(--background-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  font-family: var(--font-sans);
+}
+
+.test-btn:hover {
+  background: var(--background-secondary);
+  color: var(--text-primary);
+}
+
+/* Loading states */
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Toast styles */
+.toast {
+  background: var(--background-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 12px 16px;
+  font-weight: 500;
+}
+
+.toast.success {
+  border-left: 4px solid var(--facebook-green);
+}
+
+.toast.error {
+  border-left: 4px solid #fa383e;
+}
+
+.toast.warning {
+  border-left: 4px solid #f7b928;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .facebook-auth-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .facebook-hero {
+    text-align: center;
+  }
+  
+  .facebook-logo {
+    font-size: 3rem;
+  }
+  
+  .facebook-hero h2 {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .facebook-auth-page {
+    padding: 16px;
+  }
+  
+  .facebook-auth-container {
+    gap: 16px;
+  }
+  
+  .facebook-form-container {
+    padding: 16px;
+  }
+  
+  .facebook-logo {
+    font-size: 2.5rem;
+  }
+  
+  .facebook-hero h2 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Scrollbar personnalisée */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-tertiary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Focus visible */
+*:focus-visible {
+  outline: 2px solid var(--facebook-blue);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: var(--facebook-blue);
+  color: white;
+}

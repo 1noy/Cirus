@@ -1,251 +1,270 @@
-import React, { useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAppStore } from '../store';
+import ContactsList from './ContactsList';
+import UserSearch from './UserSearch';
+import ProfileSettings from './ProfileSettings';
 
-// Composant Canvas pour l'animation Matrix optimisée
-function Matrix({ width = 420, height = 320, columns = 50 }) {
-  const ref = useRef();
-  
-  useEffect(() => {
-    const canvas = ref.current;
-    const ctx = canvas.getContext("2d");
-    let running = true;
-    
-    // Caractères Matrix
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?";
-    
-    // Génère les colonnes avec une meilleure distribution
-    const columns = [];
-    const columnWidth = Math.max(20, width / 40);
-    const numColumns = Math.floor(width / columnWidth);
-    
-    for (let i = 0; i < numColumns; i++) {
-      columns.push({
-        x: i * columnWidth,
-        y: Math.random() * height,
-        speed: 0.5 + Math.random() * 1.5,
-        chars: [],
-        length: 8 + Math.floor(Math.random() * 15),
-        opacity: 0.3 + Math.random() * 0.7
-      });
-    }
-    
-    function draw() {
-      // Effet de traînée plus subtil
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, width, height);
-      
-      for (let col of columns) {
-        // Génère de nouveaux caractères
-        if (col.chars.length < col.length) {
-          col.chars.push({
-            char: chars[Math.floor(Math.random() * chars.length)],
-            y: col.y,
-            opacity: col.opacity
-          });
-        }
-        
-        // Dessine les caractères
-        for (let i = 0; i < col.chars.length; i++) {
-          const char = col.chars[i];
-          ctx.fillStyle = `rgba(0, 255, 0, ${char.opacity})`;
-          ctx.font = '14px monospace';
-          ctx.fillText(char.char, col.x, char.y);
-          
-          char.y += col.speed;
-          char.opacity -= 0.01;
-          
-          // Supprime les caractères qui sortent de l'écran
-          if (char.y > height || char.opacity <= 0) {
-            col.chars.splice(i, 1);
-            i--;
-          }
-        }
-        
-        // Déplace la colonne
-        col.y += col.speed;
-        if (col.y > height) {
-          col.y = -20;
-        }
-      }
-      
-      if (running) requestAnimationFrame(draw);
-    }
-    
-    draw();
-    
-    return () => { 
-      running = false; 
-    };
-  }, [width, height, columns]);
-  
-  return (
-    <canvas
-      ref={ref}
-      width={width}
-      height={height}
-      style={{
-        position: "absolute",
-        left: "50%",
-        top: "50%",
-        transform: "translate(-50%, -50%)",
-        pointerEvents: "none",
-        zIndex: 2,
-      }}
-    />
-  );
-}
+const Home = () => {
+  const { selectedContact, setSelectedContact } = useAppStore();
+  const [activeSection, setActiveSection] = useState('home');
+  const [showSearch, setShowSearch] = useState(false);
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
+  const [searchFilter, setSearchFilter] = useState('all');
+  const [notifications] = useState({
+    messages: 3,
+    search: 1
+  });
 
-export default function Home() {
-  const navigate = useNavigate();
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      const width = canvas.width;
-      const height = canvas.height;
-      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?";
-      const columnWidth = Math.max(20, width / 40);
-      const numColumns = Math.floor(width / columnWidth);
-
-      const columns = [];
-      for (let i = 0; i < numColumns; i++) {
-        columns.push({
-          x: i * columnWidth,
-          y: Math.random() * height,
-          speed: 0.5 + Math.random() * 1.5,
-          chars: [],
-          length: 8 + Math.floor(Math.random() * 15),
-          opacity: 0.3 + Math.random() * 0.7
-        });
-      }
-
-      function draw() {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-        ctx.fillRect(0, 0, width, height);
-
-        for (let col of columns) {
-          if (col.chars.length < col.length) {
-            col.chars.push({
-              char: chars[Math.floor(Math.random() * chars.length)],
-              y: col.y,
-              opacity: col.opacity
-            });
-          }
-
-          for (let i = 0; i < col.chars.length; i++) {
-            const char = col.chars[i];
-            ctx.fillStyle = `rgba(0, 255, 0, ${char.opacity})`;
-            ctx.font = '14px monospace';
-            ctx.fillText(char.char, col.x, char.y);
-
-            char.y += col.speed;
-            char.opacity -= 0.01;
-
-            if (char.y > height || char.opacity <= 0) {
-              col.chars.splice(i, 1);
-              i--;
-            }
-          }
-
-          col.y += col.speed;
-          if (col.y > height) {
-            col.y = -20;
-          }
-        }
-
-        requestAnimationFrame(draw);
-      }
-
-      draw();
-    }
+  const handleSectionChange = useCallback((section) => {
+    setActiveSection(section);
   }, []);
 
+  const handleContactSelect = useCallback((contact) => {
+    setSelectedContact(contact);
+  }, [setSelectedContact]);
+
+  const handleProfileSettingsToggle = useCallback(() => {
+    setShowProfileSettings(!showProfileSettings);
+  }, [showProfileSettings]);
+
+  const handleFilterChange = useCallback((filter) => {
+    setSearchFilter(filter);
+  }, []);
+
+  const isHomeActive = activeSection === 'home';
+  const isMessagesActive = activeSection === 'messages';
+  const isSearchActive = activeSection === 'search';
+
   return (
-    <div style={{
-      width: '100vw',
-      height: '100vh',
-      background: 'linear-gradient(135deg, #181828 0%, #23234a 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      position: 'relative',
-      overflow: 'hidden'
+    <div className="home-container" style={{ 
+      background: 'linear-gradient(135deg, #000000, #1a1a2e)',
+      minHeight: '100vh',
+      padding: '20px'
     }}>
-      {/* Canvas Matrix en arrière-plan */}
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          opacity: 0.3,
-          zIndex: 1
-        }}
-      />
-      
-      {/* Contenu principal */}
-      <div style={{
-        position: 'relative',
-        zIndex: 2,
-        textAlign: 'center',
-        padding: window.innerWidth <= 768 ? '20px' : '40px',
-        maxWidth: window.innerWidth <= 768 ? '90%' : '600px'
+      {/* Navigation en haut */}
+      <nav className="top-navigation" style={{ 
+        background: 'rgba(255, 0, 255, 0.2)', 
+        padding: '10px',
+        borderRadius: '10px',
+        marginBottom: '20px'
       }}>
-        <h1 style={{
-          fontSize: window.innerWidth <= 768 ? '28px' : '48px',
-          fontWeight: '800',
-          color: '#1cc6ff',
-          margin: '0 0 20px 0',
-          textShadow: '0 0 20px rgba(28, 198, 255, 0.5)',
-          lineHeight: window.innerWidth <= 768 ? '1.2' : '1.1'
-        }}>
-          Bienvenue sur Cirus-chat
-        </h1>
+        <div className="nav-buttons">
+          <button 
+            onClick={() => handleSectionChange('home')}
+            className={`nav-tab ${isHomeActive ? 'active' : ''}`}
+            style={{ 
+              background: isHomeActive ? '#ff00ff' : '#333',
+              color: '#fff',
+              padding: '10px 20px',
+              border: 'none',
+              borderRadius: '5px',
+              margin: '0 5px'
+            }}
+          >
+            <i className="fas fa-home"></i>
+            <span>Accueil</span>
+          </button>
+          
+          <button 
+            onClick={() => handleSectionChange('messages')}
+            className={`nav-tab ${isMessagesActive ? 'active' : ''}`}
+            style={{ 
+              background: isMessagesActive ? '#ff00ff' : '#333',
+              color: '#fff',
+              padding: '10px 20px',
+              border: 'none',
+              borderRadius: '5px',
+              margin: '0 5px'
+            }}
+          >
+            <i className="fas fa-comments"></i>
+            <span>Messages</span>
+            {notifications.messages > 0 && (
+              <div className="notification-badge">
+                {notifications.messages}
+              </div>
+            )}
+          </button>
+          
+          <button 
+            onClick={() => handleSectionChange('search')}
+            className={`nav-tab ${isSearchActive ? 'active' : ''}`}
+            style={{ 
+              background: isSearchActive ? '#ff00ff' : '#333',
+              color: '#fff',
+              padding: '10px 20px',
+              border: 'none',
+              borderRadius: '5px',
+              margin: '0 5px'
+            }}
+          >
+            <i className="fas fa-search"></i>
+            <span>Recherche</span>
+          </button>
+        </div>
         
-        <button
-          onClick={() => navigate('/chat')}
-          aria-label="Accéder au chat"
-          role="button"
-          tabIndex={0}
-          style={{
-            background: 'linear-gradient(135deg, #1cc6ff 0%, #009fff 100%)',
-            border: 'none',
-            borderRadius: window.innerWidth <= 768 ? '20px' : '24px',
-            padding: window.innerWidth <= 768 ? '16px 28px' : '16px 32px',
-            color: '#fff',
-            fontSize: window.innerWidth <= 768 ? '16px' : '18px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            boxShadow: '0 8px 32px rgba(28, 198, 255, 0.3)',
-            minWidth: window.innerWidth <= 768 ? '200px' : 'auto',
-            minHeight: window.innerWidth <= 768 ? '48px' : 'auto',
-            position: 'relative',
-            overflow: 'hidden'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = '0 12px 40px rgba(28, 198, 255, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 8px 32px rgba(28, 198, 255, 0.3)';
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              navigate('/chat');
-            }
-          }}
-        >
-          Accéder au chat
-        </button>
+        <div className="nav-actions">
+          <button 
+            onClick={handleProfileSettingsToggle}
+            className="btn btn-icon profile-btn"
+            title="Paramètres du profil"
+            style={{ 
+              background: '#00ffff',
+              color: '#000',
+              padding: '10px',
+              border: 'none',
+              borderRadius: '5px'
+            }}
+          >
+            <i className="fas fa-cog"></i>
+          </button>
+        </div>
+      </nav>
+
+      {/* Contenu principal */}
+      <div className="main-content" style={{ 
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 'calc(100vh - 100px)'
+      }}>
+        <AnimatePresence mode="wait">
+          {isHomeActive && (
+            <motion.div
+              key="home"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="content-section"
+              style={{ 
+                textAlign: 'center',
+                background: 'rgba(255, 0, 255, 0.3)',
+                padding: '40px',
+                borderRadius: '20px',
+                border: '2px solid #ff00ff'
+              }}
+            >
+              <div className="cirus-neon-text" style={{
+                fontSize: '4rem',
+                color: '#ff00ff',
+                textShadow: '0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff',
+                marginBottom: '20px'
+              }}>
+                CIRUS
+              </div>
+              <p style={{ 
+                color: '#ffffff', 
+                fontSize: '1.2rem',
+                marginTop: '20px',
+                background: 'rgba(0, 255, 255, 0.2)',
+                padding: '10px',
+                borderRadius: '5px'
+              }}>
+                ✅ Application CirusChat - Fonctionnelle
+              </p>
+              <p style={{ 
+                color: '#ffff00', 
+                fontSize: '1rem',
+                marginTop: '10px'
+              }}>
+                URL: http://192.168.0.103:5173
+              </p>
+            </motion.div>
+          )}
+          {isMessagesActive && (
+            <motion.div
+              key="messages"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="content-section"
+              style={{ 
+                background: 'rgba(0, 255, 255, 0.2)',
+                padding: '20px',
+                borderRadius: '10px'
+              }}
+            >
+              <div className="contacts-wrapper">
+                <ContactsList 
+                  onContactSelect={handleContactSelect}
+                  onStartSearch={() => handleSectionChange('search')}
+                />
+              </div>
+            </motion.div>
+          )}
+          {isSearchActive && (
+            <motion.div
+              key="search"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="content-section"
+              style={{ 
+                background: 'rgba(255, 255, 0, 0.2)',
+                padding: '20px',
+                borderRadius: '10px'
+              }}
+            >
+              <div className="search-header">
+                <h2>
+                  <i className="fas fa-search"></i>
+                  Recherche
+                </h2>
+                <p>Trouvez de nouveaux utilisateurs</p>
+              </div>
+              
+              {/* Filtres de recherche */}
+              <div className="search-filters">
+                <button 
+                  className={`filter-btn ${searchFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('all')}
+                >
+                  Tous
+                </button>
+                <button 
+                  className={`filter-btn ${searchFilter === 'online' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('online')}
+                >
+                  En ligne
+                </button>
+                <button 
+                  className={`filter-btn ${searchFilter === 'recent' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('recent')}
+                >
+                  Récents
+                </button>
+              </div>
+              
+              <div className="search-content">
+                <UserSearch 
+                  onClose={() => handleSectionChange('home')} 
+                  filter={searchFilter}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      {/* Modals */}
+      <AnimatePresence>
+        {showSearch && (
+          <UserSearch
+            onUserSelect={(user) => {
+              setSelectedContact(user);
+              setShowSearch(false);
+            }}
+            onClose={() => setShowSearch(false)}
+          />
+        )}
+        {showProfileSettings && (
+          <ProfileSettings onClose={() => setShowProfileSettings(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
-} 
+};
+
+export default Home;

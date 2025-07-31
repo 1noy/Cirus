@@ -1,83 +1,67 @@
 {
-  "name": "Chat-changing",
-  "short_name": "Chat-changing",
-  "description": "Messagerie moderne et sécurisée",
+  "name": "Cirus Chat",
+  "short_name": "CirusChat",
+  "description": "Application de chat moderne avec interface cyberpunk",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#23234a",
-  "theme_color": "#1cc6ff",
+  "background_color": "#0a0a0a",
+  "theme_color": "#00d4ff",
   "orientation": "portrait-primary",
   "scope": "/",
-  "lang": "fr",
-  "categories": ["social", "communication"],
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable any"
+      "src": "icon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
     },
     {
-      "src": "/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable any"
+      "src": "icon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
     },
     {
-      "src": "/icon-72x72.png",
+      "src": "icon-72x72.png",
       "sizes": "72x72",
       "type": "image/png"
     },
     {
-      "src": "/icon-96x96.png",
+      "src": "icon-96x96.png",
       "sizes": "96x96",
       "type": "image/png"
     },
     {
-      "src": "/icon-128x128.png",
+      "src": "icon-128x128.png",
       "sizes": "128x128",
       "type": "image/png"
     },
     {
-      "src": "/icon-144x144.png",
+      "src": "icon-144x144.png",
       "sizes": "144x144",
       "type": "image/png"
     },
     {
-      "src": "/icon-152x152.png",
+      "src": "icon-152x152.png",
       "sizes": "152x152",
       "type": "image/png"
     },
     {
-      "src": "/icon-384x384.png",
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-384x384.png",
       "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
       "type": "image/png"
     }
   ],
-  "shortcuts": [
-    {
-      "name": "Nouveau message",
-      "short_name": "Message",
-      "description": "Commencer une nouvelle conversation",
-      "url": "/chat",
-      "icons": [
-        {
-          "src": "/icon-96x96.png",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
-      "name": "Profil",
-      "short_name": "Profil",
-      "description": "Gérer votre profil",
-      "url": "/profile",
-      "icons": [
-        {
-          "src": "/icon-96x96.png",
-          "sizes": "96x96"
-        }
-      ]
-    }
-  ]
+  "categories": ["social", "communication"],
+  "lang": "fr",
+  "dir": "ltr"
 } 

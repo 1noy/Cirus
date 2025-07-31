@@ -1,58 +1,76 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import viteCompression from 'vite-plugin-compression';
+import { resolve } from 'path';
+import { compression } from 'vite-plugin-compression2';
 
 export default defineConfig({
-  base: '/Cirus/',
   plugins: [
     react({
-      // Optimisation React
-      jsxImportSource: '@emotion/react',
       babel: {
-        plugins: ['@emotion/babel-plugin']
+        plugins: [
+          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
+        ]
       }
     }),
-    viteCompression({
+    compression({
       algorithm: 'gzip',
-      ext: '.gz'
+      exclude: [/\.(br)$/, /\.(gz)$/],
+      compressionOptions: {
+        level: 9
+      }
     }),
-    viteCompression({
+    compression({
       algorithm: 'brotliCompress',
-      ext: '.br'
+      exclude: [/\.(br)$/, /\.(gz)$/],
+      compressionOptions: {
+        level: 11
+      }
     })
   ],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+      '@components': resolve(__dirname, 'src/components'),
+      '@utils': resolve(__dirname, 'src/utils'),
+      '@styles': resolve(__dirname, 'src/styles'),
+      '@assets': resolve(__dirname, 'src/assets'),
+      '@hooks': resolve(__dirname, 'src/hooks'),
+      '@store': resolve(__dirname, 'src/store')
+    }
+  },
   build: {
     target: 'es2015',
-    minify: 'terser',
+    outDir: 'dist',
     sourcemap: false,
+    minify: 'terser',
     rollupOptions: {
       output: {
         manualChunks: {
-          // Core React
-          'react-core': ['react', 'react-dom'],
-          
-          // Routing
-          'router': ['react-router-dom'],
-          
-          // Firebase (séparé pour cache)
-          'firebase-auth': ['firebase/auth'],
-          'firebase-firestore': ['firebase/firestore'],
-          'firebase-storage': ['firebase/storage'],
-          
-          // UI Libraries (regroupées)
-          'mui': ['@mui/material', '@mui/icons-material'],
-          'emotion': ['@emotion/react', '@emotion/styled'],
-          
-          // Emoji (lazy load)
-          'emoji': ['emoji-picker-react', '@emoji-mart/react'],
-          
-          // Canvas (heavy)
-          'canvas': ['canvas']
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          ui: ['framer-motion'],
+          utils: ['date-fns', 'clsx', 'nanoid'],
+          virtual: ['react-window', 'react-intersection-observer'],
+          forms: ['react-hook-form', 'react-dropzone'],
+          state: ['zustand', 'immer'],
+          query: ['react-query'],
+          error: ['react-error-boundary'],
+          toast: ['react-hot-toast']
         },
-        // Optimisation des chunks
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name.split('.');
+          const ext = info[info.length - 1];
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
+            return `assets/images/[name]-[hash].[ext]`;
+          }
+          if (/css/i.test(ext)) {
+            return `assets/css/[name]-[hash].[ext]`;
+          }
+          return `assets/[name]-[hash].[ext]`;
+        }
       }
     },
     terserOptions: {
@@ -60,10 +78,9 @@ export default defineConfig({
         drop_console: true,
         drop_debugger: true,
         pure_funcs: ['console.log', 'console.info', 'console.debug'],
-        passes: 3
+        passes: 2
       },
       mangle: {
-        toplevel: true,
         safari10: true
       }
     },
@@ -74,25 +91,45 @@ export default defineConfig({
       'react',
       'react-dom',
       'react-router-dom',
-      '@mui/material',
-      '@mui/icons-material'
+      'firebase/app',
+      'firebase/auth',
+      'firebase/firestore',
+      'firebase/storage',
+      'framer-motion',
+      'date-fns',
+      'clsx',
+      'nanoid',
+      'react-window',
+      'react-intersection-observer',
+      'react-hook-form',
+      'react-dropzone',
+      'zustand',
+      'immer',
+      'react-query',
+      'react-error-boundary',
+      'react-hot-toast'
     ],
-    exclude: [
-      'canvas',
-      'emoji-picker-react',
-      '@emoji-mart/react'
-    ]
+    exclude: ['@firebase/app']
+  },
+  server: {
+    port: 5173,
+    host: true,
+    open: true,
+    cors: true
+  },
+  preview: {
+    port: 4173,
+    host: true
+  },
+  css: {
+    devSourcemap: false
   },
   esbuild: {
-    target: 'es2015',
-    treeShaking: true
+    jsxFactory: 'React.createElement',
+    jsxFragment: 'React.Fragment',
+    target: 'es2015'
   },
-  // Optimisation du serveur de développement
-  server: {
-    hmr: {
-      overlay: false
-    }
-  },
-  // Optimisation des assets
-  assetsInclude: ['**/*.webp', '**/*.avif']
+  define: {
+    __DEV__: JSON.stringify(process.env.NODE_ENV === 'development')
+  }
 }); 

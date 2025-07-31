@@ -1,450 +1,248 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db, auth } from '../utils/firebase';
-import { useToast } from './ToastContext';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAppStore } from '../store';
 
-export default function UserSearch({ contacts, onUserSelect, onClose, onMessage }) {
+const UserSearch = ({ onUserSelect, onClose, filter = 'all' }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(true);
-  const { showToast } = useToast();
+  const [isSearching, setIsSearching] = useState(false);
+  
+  const { 
+    users, 
+    contacts, 
+    searchResults, 
+    setSearchResults, 
+    clearSearchResults,
+    addContact,
+    createChat,
+    setActiveChat,
+    chats,
+    user: currentUser
+  } = useAppStore();
 
-  useEffect(() => {
-    setMounted(true);
-    return () => {
-      setMounted(false);
-    };
-  }, []);
+  // Filtrer les utilisateurs basé sur la recherche et les filtres
+  const filteredUsers = users.filter(user => {
+    // Exclure l'utilisateur actuel
+    if (user.uid === currentUser?.uid) return false;
+    
+    // Filtre par terme de recherche
+    const matchesSearch = searchTerm === '' || 
+      user.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    // Appliquer les filtres supplémentaires
+    switch (filter) {
+      case 'online':
+        return user.status === 'online';
+      case 'recent':
+        // Simuler des utilisateurs récents (moins de 7 jours)
+        return user.lastSeen && (Date.now() - user.lastSeen) < 7 * 24 * 60 * 60 * 1000;
+      default:
+        return true;
+    }
+  });
 
-  const searchUsers = useCallback(async (searchQuery) => {
-    if (!searchQuery.trim() || searchQuery.length < 3 || !mounted) {
-      if (mounted) {
-        setSearchResults([]);
+  // Vérifier si un utilisateur est déjà dans les contacts
+  const isContact = (userId) => {
+    return contacts.some(contact => contact.uid === userId);
+  };
+
+  // Vérifier si un chat existe déjà avec cet utilisateur
+  const getExistingChat = (userId) => {
+    return chats.find(chat => 
+      chat.participants.length === 2 && 
+      chat.participants.includes(currentUser?.uid) && 
+      chat.participants.includes(userId)
+    );
+  };
+
+  // Vérifier si on a déjà discuté avec cet utilisateur
+  const hasExistingChat = (userId) => {
+    return getExistingChat(userId) !== undefined;
+  };
+
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    if (value.trim()) {
+      setIsSearching(true);
+      // Simuler une recherche
+      setTimeout(() => {
+        setSearchResults(filteredUsers);
+        setIsSearching(false);
+      }, 500);
+    } else {
+      clearSearchResults();
+      setIsSearching(false);
+    }
+  };
+
+  const handleAddContact = async (user) => {
+    // Vérification supplémentaire pour empêcher l'auto-ajout
+    if (user.uid === currentUser?.uid) {
+      console.warn('Tentative d\'auto-ajout bloquée');
+      if (window.showError) {
+        window.showError('Vous ne pouvez pas vous ajouter vous-même');
       }
       return;
     }
 
-    setLoading(true);
     try {
-      const usersRef = collection(db, 'users');
-      
-      // Recherche par email
-      const emailQuery = query(
-        usersRef,
-        where('email', '>=', searchQuery),
-        where('email', '<=', searchQuery + '\uf8ff'),
-        limit(10)
-      );
-      
-      const emailSnapshot = await getDocs(emailQuery);
-      const emailResults = [];
-      emailSnapshot.forEach((doc) => {
-        const userData = doc.data();
-        if (userData.email !== auth.currentUser?.email) {
-          emailResults.push({
-            id: doc.id,
-            ...userData
-          });
-        }
-      });
-
-      // Recherche par nom d'affichage
-      const nameQuery = query(
-        usersRef,
-        where('displayName', '>=', searchQuery),
-        where('displayName', '<=', searchQuery + '\uf8ff'),
-        limit(10)
-      );
-      
-      const nameSnapshot = await getDocs(nameQuery);
-      const nameResults = [];
-      nameSnapshot.forEach((doc) => {
-        const userData = doc.data();
-        if (userData.email !== auth.currentUser?.email) {
-          nameResults.push({
-            id: doc.id,
-            ...userData
-          });
-        }
-      });
-
-      // Combiner et dédupliquer les résultats
-      const allResults = [...emailResults, ...nameResults];
-      const uniqueResults = allResults.filter((user, index, self) => 
-        index === self.findIndex(u => u.id === user.id)
-      );
-
-      if (mounted) {
-        setSearchResults(uniqueResults);
+      if (window.showLoading) {
+        window.showLoading('Ajout du contact...');
       }
-    } catch {
-      if (mounted) {
-        showToast({ message: 'Erreur lors de la recherche', severity: 'error' });
-      }
-    } finally {
-      if (mounted) {
-        setLoading(false);
+      
+      await addContact({
+        uid: user.uid,
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        addedAt: Date.now()
+      });
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout du contact:', error);
+      if (window.showError) {
+        window.showError('Erreur lors de l\'ajout du contact');
       }
     }
-  }, [showToast, mounted]);
+  };
 
-  const handleSearchChange = useCallback((e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
+  const handleStartChat = async (user) => {
+    const existingChat = getExistingChat(user.uid);
     
-    if (value.length >= 3) {
-      searchUsers(value);
+    if (existingChat) {
+      setActiveChat(existingChat.id);
     } else {
-      setSearchResults([]);
+      const chatId = await createChat([currentUser.uid, user.uid]);
+      setActiveChat(chatId);
     }
-  }, [searchUsers]);
-
-  const handleUserSelect = useCallback((user) => {
-    if (mounted) {
-      // Vérifier si l'utilisateur est déjà dans les contacts
-      const existingContact = contacts?.find(contact => contact.email === user.email);
-      
-      if (existingContact) {
-        // Si le contact existe, ouvrir directement la discussion
-        if (onMessage) {
-          onMessage(existingContact);
-        } else {
-          onUserSelect(existingContact);
-        }
-      } else {
-        // Sinon, ajouter le contact
-        onUserSelect(user);
-      }
-      onClose();
+    
+    if (onUserSelect) {
+      onUserSelect(user);
     }
-  }, [onUserSelect, onMessage, onClose, mounted, contacts]);
+  };
 
-  // Vérifier si un utilisateur est déjà dans les contacts
-  const isInContacts = useCallback((user) => {
-    return contacts && contacts.some(contact => contact.email === user.email);
-  }, [contacts]);
-
-  // Obtenir le contact existant
-  const getExistingContact = useCallback((user) => {
-    return contacts?.find(contact => contact.email === user.email);
-  }, [contacts]);
+  const handleMessage = (user) => {
+    handleStartChat(user);
+  };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0, 0, 0, 0.7)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      backdropFilter: 'blur(5px)'
-    }}>
-      <div style={{
-        background: 'linear-gradient(135deg, #23234a 0%, #181828 100%)',
-        padding: '24px',
-        borderRadius: '12px',
-        width: '500px',
-        maxHeight: '80vh',
-        border: '1px solid rgba(62, 242, 255, 0.3)',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px'
-        }}>
-          <h3 style={{ 
-            margin: 0, 
-            fontSize: '18px', 
-            fontWeight: 'bold',
-            color: '#3ef2ff'
-          }}>
-            Rechercher des utilisateurs
-          </h3>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#fff',
-              fontSize: '24px',
-              cursor: 'pointer',
-              padding: '0',
-              width: '30px',
-              height: '30px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.color = '#3ef2ff';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.color = '#fff';
-            }}
-          >
-            ×
+    <motion.div 
+      className="user-search-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div 
+        className="user-search-modal"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.8, opacity: 0 }}
+      >
+      <div className="search-header">
+        <h2>Rechercher des utilisateurs</h2>
+          <button onClick={onClose} className="btn btn-icon close-btn">
+            <i className="fas fa-times"></i>
           </button>
-        </div>
+      </div>
 
-        <input
-          type="text"
-          placeholder="Rechercher par email ou nom..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            background: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(62, 242, 255, 0.3)',
-            borderRadius: '8px',
-            color: '#fff',
-            fontSize: '14px',
-            marginBottom: '16px',
-            transition: 'all 0.3s ease',
-            outline: 'none'
-          }}
-          onFocus={(e) => {
-            e.target.style.border = '1px solid rgba(62, 242, 255, 0.6)';
-            e.target.style.boxShadow = '0 0 0 3px rgba(62, 242, 255, 0.1)';
-          }}
-          onBlur={(e) => {
-            e.target.style.border = '1px solid rgba(62, 242, 255, 0.3)';
-            e.target.style.boxShadow = 'none';
-          }}
-        />
-
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          border: '1px solid rgba(62, 242, 255, 0.2)',
-          borderRadius: '8px',
-          background: 'rgba(255, 255, 255, 0.05)'
-        }}>
-          {loading ? (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '20px', 
-              color: '#a0f0ff',
-              fontSize: '14px'
-            }}>
-              <div style={{ fontSize: '24px', marginBottom: '8px' }}>⏳</div>
-              Recherche en cours...
-            </div>
-          ) : searchResults.length === 0 ? (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '20px', 
-              color: '#a0f0ff',
-              fontSize: '14px'
-            }}>
-              <div style={{ fontSize: '32px', marginBottom: '8px' }}>
-                {searchTerm.length >= 3 ? '🔍' : '💡'}
+      <div className="search-input-container">
+        <div className="search-input-wrapper">
+            <i className="fas fa-search search-icon"></i>
+          <input
+            type="text"
+            placeholder="Rechercher par nom ou email..."
+            value={searchTerm}
+              onChange={handleSearch}
+            className="search-input"
+          />
+            {isSearching && (
+              <div className="search-spinner">
+                <i className="fas fa-spinner fa-spin"></i>
               </div>
-              {searchTerm.length >= 3 ? 'Aucun utilisateur trouvé' : 'Tapez au moins 3 caractères pour rechercher'}
-            </div>
-          ) : (
-            searchResults.map((user) => (
-              <div
-                key={user.id}
-                onClick={() => {
-                  // Si l'utilisateur est déjà dans les contacts, ouvrir directement la discussion
-                  if (isInContacts(user)) {
-                    const existingContact = getExistingContact(user);
-                    if (existingContact && onMessage) {
-                      onMessage(existingContact);
-                      onClose();
-                    }
-                  } else {
-                    // Sinon, sélectionner l'utilisateur pour l'ajouter
-                    handleUserSelect(user);
-                  }
-                }}
-                style={{
-                  padding: '12px 16px',
-                  borderBottom: '1px solid rgba(62, 242, 255, 0.1)',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(28, 198, 255, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'transparent';
-                }}
-              >
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  background: user.avatar || 'linear-gradient(135deg, #1cc6ff 0%, #009fff 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  color: '#fff',
-                  overflow: 'hidden'
-                }}>
-                  {user.avatar ? (
-                    <img 
-                      src={user.avatar} 
-                      alt="Avatar" 
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    (user.displayName || user.email).charAt(0).toUpperCase()
-                  )}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ 
-                    fontWeight: 'bold', 
-                    fontSize: '14px',
-                    color: user.online ? '#4caf50' : '#fff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    {user.displayName || user.email}
-                    {user.online && (
-                      <span style={{ 
-                        fontSize: '10px',
-                        background: '#4caf50',
-                        color: '#fff',
-                        padding: '2px 6px',
-                        borderRadius: '10px'
-                      }}>
-                        En ligne
-                      </span>
-                    )}
-                    {isInContacts(user) && (
-                      <span style={{ 
-                        fontSize: '10px',
-                        background: 'rgba(76, 175, 80, 0.2)',
-                        color: '#4caf50',
-                        padding: '2px 6px',
-                        borderRadius: '10px',
-                        border: '1px solid rgba(76, 175, 80, 0.3)'
-                      }}>
-                        ✓ Contact existant
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ 
-                    fontSize: '12px', 
-                    color: '#a0f0ff',
-                    marginTop: '2px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}>
-                    {user.email}
-                    {isInContacts(user) && (
-                      <span style={{
-                        fontSize: '10px',
-                        color: '#4caf50',
-                        fontStyle: 'italic'
-                      }}>
-                        (Cliquer pour ouvrir le chat)
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {isInContacts(user) ? (
-                  <div style={{
-                    display: 'flex',
-                    gap: '8px'
-                  }}>
-                    <span style={{
-                      fontSize: '10px',
-                      color: '#4caf50',
-                      background: 'rgba(76, 175, 80, 0.2)',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}>
-                      ✓ Contact
-                    </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const existingContact = getExistingContact(user);
-                        if (existingContact && onMessage) {
-                          onMessage(existingContact);
-                          onClose();
-                        }
-                      }}
-                      style={{
-                        padding: '6px 12px',
-                        background: 'linear-gradient(90deg, #4caf50 0%, #45a049 100%)',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.transform = 'scale(1.05)';
-                        e.target.style.boxShadow = '0 2px 8px rgba(76, 175, 80, 0.3)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.transform = 'scale(1)';
-                        e.target.style.boxShadow = 'none';
-                      }}
-                    >
-                      Ouvrir chat
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleUserSelect(user);
-                    }}
-                    style={{
-                      padding: '6px 12px',
-                      background: 'linear-gradient(90deg, #1cc6ff 0%, #009fff 100%)',
-                      border: 'none',
-                      borderRadius: '6px',
-                      color: '#fff',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.transform = 'scale(1.05)';
-                      e.target.style.boxShadow = '0 2px 8px rgba(28, 198, 255, 0.3)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.transform = 'scale(1)';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  >
-                    Ajouter
-                  </button>
-                )}
-              </div>
-            ))
           )}
         </div>
       </div>
-    </div>
+
+        <div className="search-results">
+      <AnimatePresence>
+            {searchResults.length > 0 ? (
+          <motion.div
+                className="results-list"
+                initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            {searchResults.map((user) => (
+              <motion.div
+                    key={user.uid}
+                    className="user-result"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+              >
+                <div className="user-info">
+                      <div className="user-avatar">
+                        {user.photoURL ? (
+                          <img src={user.photoURL} alt={user.displayName} />
+                        ) : (
+                          <i className="fas fa-user"></i>
+                        )}
+                      </div>
+                                             <div className="user-details">
+                         <h3>{user.displayName || 'Utilisateur'}</h3>
+                       </div>
+                    </div>
+                    
+                                         <div className="user-actions">
+                       {isContact(user.uid) || hasExistingChat(user.uid) ? (
+                         <button 
+                           onClick={() => handleMessage(user)}
+                           className="btn btn-sm btn-primary"
+                         >
+                           <i className="fas fa-comment"></i>
+                           Message
+                         </button>
+                       ) : (
+                         <button 
+                           onClick={() => handleAddContact(user)}
+                           className="btn btn-sm btn-success"
+                         >
+                           <i className="fas fa-plus"></i>
+                           Ajouter
+                         </button>
+                       )}
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+            ) : searchTerm && !isSearching ? (
+              <motion.div
+                className="no-results"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <i className="fas fa-search"></i>
+                <p>Aucun utilisateur trouvé</p>
+              </motion.div>
+            ) : (
+              <motion.div 
+                className="search-placeholder"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <i className="fas fa-users"></i>
+                <p>Tapez pour rechercher des utilisateurs</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    </motion.div>
   );
-} 
+};
+
+export default UserSearch; 
