@@ -54,6 +54,11 @@ const ChatPage = () => {
     scrollToBottom();
   }, [chatMessages]);
 
+  // Ouvrir automatiquement le tiroir quand aucun chat n'est actif
+  useEffect(() => {
+    if (!activeChat) setShowDrawer(true);
+  }, [activeChat]);
+
   // Son de réception lorsqu'un nouveau message d'un autre utilisateur arrive
   const lastCountRef = useRef(chatMessages.length);
   useEffect(() => {
@@ -216,22 +221,41 @@ const ChatPage = () => {
 
   if (!currentChat) {
     return (
-      <>
-      <div className="chat-error">
-        <h3>Chat non trouvé</h3>
-          <button onClick={() => setShowDrawer(true)} className="btn btn-primary">
-          Retour aux contacts
-        </button>
-      </div>
+      <div className="chat-page chat-layout">
+        <div className="chat-drawer-desktop">
+          <ContactsDrawer
+            pinned
+            chats={chats}
+            contacts={contacts}
+            messages={messages}
+            currentUserId={currentUser?.uid}
+            onSelectChat={handleSelectChat}
+          />
+        </div>
+
+        <div className="chat-messages" style={{ display: 'grid', placeItems: 'center' }}>
+          <div className="empty-messages" style={{ textAlign: 'center' }}>
+            <i className="fas fa-comments" style={{ fontSize: 48, opacity: .85 }}></i>
+            <h3 style={{ marginTop: 12 }}>Bienvenue dans CirusChat</h3>
+            <p style={{ marginTop: 6, color: 'var(--muted)' }}>
+              Sélectionnez un contact à gauche ou créez une nouvelle conversation.
+            </p>
+            <div style={{ marginTop: 16, display: 'flex', gap: 8, justifyContent: 'center' }}>
+              <button onClick={() => setShowDrawer(true)} className="btn btn-primary">Ouvrir les contacts</button>
+            </div>
+          </div>
+        </div>
+
         <ContactsDrawer
           visible={showDrawer}
           onClose={() => setShowDrawer(false)}
           chats={chats}
           contacts={contacts}
+          messages={messages}
           currentUserId={currentUser?.uid}
           onSelectChat={handleSelectChat}
         />
-      </>
+      </div>
     );
   }
 
