@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store';
+import ContactsDrawer from './ContactsDrawer';
 
 const ChatPage = () => {
   const { chatId } = useParams();
@@ -9,6 +10,7 @@ const ChatPage = () => {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const [messageText, setMessageText] = useState('');
+  const [showDrawer, setShowDrawer] = useState(false);
   const [editingMessage, setEditingMessage] = useState(null);
   const [replyToMessage, setReplyToMessage] = useState(null);
   const [showReactions, setShowReactions] = useState(null);
@@ -145,6 +147,12 @@ const ChatPage = () => {
 
   const handleBackToContacts = () => {
     setActiveChat(null);
+    setShowDrawer(true);
+  };
+
+  const handleSelectChat = (chatId) => {
+    setActiveChat(chatId);
+    setShowDrawer(false);
   };
 
   const handleEmojiClick = (emoji) => {
@@ -191,12 +199,22 @@ const ChatPage = () => {
 
   if (!currentChat) {
     return (
-      <div className="chat-error">
-        <h3>Chat non trouvé</h3>
-        <button onClick={handleBackToContacts} className="btn btn-primary">
-          Retour aux contacts
-        </button>
-      </div>
+      <>
+        <div className="chat-error">
+          <h3>Chat non trouvé</h3>
+          <button onClick={() => setShowDrawer(true)} className="btn btn-primary">
+            Retour aux contacts
+          </button>
+        </div>
+        <ContactsDrawer
+          visible={showDrawer}
+          onClose={() => setShowDrawer(false)}
+          chats={chats}
+          contacts={contacts}
+          currentUserId={currentUser?.uid}
+          onSelectChat={handleSelectChat}
+        />
+      </>
     );
   }
 
@@ -530,6 +548,15 @@ const ChatPage = () => {
           accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
         />
       </form>
+
+      <ContactsDrawer
+        visible={showDrawer}
+        onClose={() => setShowDrawer(false)}
+        chats={chats}
+        contacts={contacts}
+        currentUserId={currentUser?.uid}
+        onSelectChat={handleSelectChat}
+      />
     </div>
   );
 };
