@@ -26,93 +26,24 @@
   <title>CirusChat - Communication Moderne</title>
 
   <style>
-    /* Reset basique */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    html, body { height: 100%; font-family: 'Segoe UI', sans-serif; }
-
-    /* Header graphique */
-    .site-header {
-      background: linear-gradient(135deg, #00d4ff, #0086c3);
-      color: #fff;
-      padding: 2rem 1rem;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .site-header h1 {
-      font-size: 2.5rem;
-      letter-spacing: 1.5px;
-    }
-
-    .site-header nav {
-      margin-top: 1rem;
-    }
-
-    .site-header nav ul {
-      list-style: none;
-      display: flex;
-      justify-content: center;
-      gap: 2rem;
-    }
-
-    .site-header nav a {
-      color: #fff;
-      text-decoration: none;
-      font-weight: 500;
-      transition: color .2s;
-    }
-
-    .site-header nav a:hover {
-      color: #ffeb3b;
-    }
-
-    /* SVG “vague” de séparation */
-    .header-wave {
-      position: absolute;
-      bottom: -1px;
-      left: 0;
-      width: 100%;
-      height: 80px;
-    }
-
-    /* Zone d’app mounting React */
-    #root {
-      min-height: calc(100vh - 200px);
-      background: #f7f9fc;
-      padding: 2rem;
-    }
+    html, body { height: 100%; font-family: 'Segoe UI', sans-serif; background: #0b0a1a; }
+    #root { min-height: 100vh; }
   </style>
 
-  <script type="module" crossorigin src="/assets/index-B4H7yEPt.js"></script>
+  <script type="module" crossorigin src="/assets/index-CxHrcTmC.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/vendor-Be9Gvr8Z.js">
-  <link rel="modulepreload" crossorigin href="/assets/router-hF8yxhrd.js">
+  <link rel="modulepreload" crossorigin href="/assets/router-WS_FqKV8.js">
   <link rel="modulepreload" crossorigin href="/assets/utils-CkSu2hCt.js">
   <link rel="modulepreload" crossorigin href="/assets/virtual-BJqExeNh.js">
   <link rel="modulepreload" crossorigin href="/assets/query-BCFsIYE1.js">
   <link rel="modulepreload" crossorigin href="/assets/error-BaU7SGNY.js">
   <link rel="modulepreload" crossorigin href="/assets/toast-DAwFn72h.js">
   <link rel="modulepreload" crossorigin href="/assets/state-CH3XQ_Yu.js">
-  <link rel="modulepreload" crossorigin href="/assets/firebase-ChMdDr2b.js">
-  <link rel="stylesheet" crossorigin href="/assets/css/index-DUOexrcU.css">
+  <link rel="modulepreload" crossorigin href="/assets/firebase-DLJYeIMi.js">
+  <link rel="stylesheet" crossorigin href="/assets/css/index-T8fjFfRV.css">
 </head>
 <body>
-
-  <header class="site-header">
-    <h1>CirusChat</h1>
-    <nav>
-      <ul>
-        <li><a href="#"><i class="fas fa-home"></i> Accueil</a></li>
-        <li><a href="#"><i class="fas fa-comments"></i> Chat</a></li>
-        <li><a href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
-      </ul>
-    </nav>
-    <!-- illustration SVG de vague -->
-    <svg class="header-wave" viewBox="0 0 1440 80" preserveAspectRatio="none">
-      <path fill="#f7f9fc" d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z"></path>
-    </svg>
-  </header>
 
   <div id="root"></div>
 </body>

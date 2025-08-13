@@ -24,6 +24,7 @@ import { auth } from './utils/firebase';
 import { ToastProvider } from './components/ToastContext';
 import NotificationManager from './components/NotificationManager';
 import { initNotifications } from './features/notifications/notifications';
+import TopBar from './components/TopBar';
 
 // Configuration React Query
 const queryClient = new QueryClient({
@@ -162,6 +163,7 @@ function App() {
       >
         <ToastProvider>
           <NotificationManager />
+          <TopBar />
           {showWelcome && (
             <LazyComponent
               component={() => (
