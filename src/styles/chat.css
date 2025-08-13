@@ -175,3 +175,17 @@
 
 /* Drawer épinglé (layout desktop) */
 .drawer--pinned { position: sticky; top: 56px; height: calc(100vh - 56px); width: 320px; }
+
+/* Layout grille chat */
+.chat-layout { display: grid; grid-template-columns: 320px 1fr; }
+.chat-drawer-desktop { display: block; }
+
+/* Améliorations visuelles bulles */
+.message-item { transition: transform .15s ease, box-shadow .2s ease; }
+.message-item:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(168,85,247,0.25); }
+.message-item.other { background: rgba(255,255,255,0.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04); }
+
+@media (max-width: 1024px) {
+  .chat-layout { display: block; }
+  .chat-drawer-desktop { display: none; }
+}

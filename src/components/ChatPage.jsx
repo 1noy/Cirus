@@ -219,7 +219,7 @@ const ChatPage = () => {
   }
 
   return (
-    <div className="chat-page" style={{ display: 'grid', gridTemplateColumns: '320px 1fr' }}>
+    <div className="chat-page chat-layout">
       <div className="chat-drawer-desktop">
         <ContactsDrawer
           pinned
