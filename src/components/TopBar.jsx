@@ -17,11 +17,9 @@ const TopBar = () => {
 
   const handleToggleSound = () => {
     const enabled = toggleSoundEnabled();
-    // feedback visuel minimal: surligner le bouton
     const el = document.getElementById('sound-toggle');
     if (el) {
-      el.style.outline = enabled ? '2px solid var(--accent)' : 'none';
-      setTimeout(() => { el.style.outline = 'none'; }, 600);
+      el.dataset.enabled = enabled ? '1' : '0';
     }
   };
 
@@ -39,7 +37,7 @@ const TopBar = () => {
           <button type="button" className="nav__link" onClick={handleToggleTheme} aria-label="Basculer le thème">
             <i className="fas fa-moon"></i> Thème
           </button>
-          <button id="sound-toggle" type="button" className="nav__link" onClick={handleToggleSound} aria-label="Activer/désactiver le son">
+          <button id="sound-toggle" type="button" className="nav__link" onClick={handleToggleSound} aria-label="Activer/désactiver le son" data-enabled={isSoundEnabled() ? '1' : '0'}>
             <i className={isSoundEnabled() ? 'fas fa-volume-up' : 'fas fa-volume-mute'}></i> Son
           </button>
         </nav>

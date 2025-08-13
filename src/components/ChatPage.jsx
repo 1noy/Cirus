@@ -54,6 +54,20 @@ const ChatPage = () => {
     scrollToBottom();
   }, [chatMessages]);
 
+  // Son de réception lorsqu'un nouveau message d'un autre utilisateur arrive
+  const lastCountRef = useRef(chatMessages.length);
+  useEffect(() => {
+    if (!currentUser || chatMessages.length <= lastCountRef.current) {
+      lastCountRef.current = chatMessages.length;
+      return;
+    }
+    const last = chatMessages[chatMessages.length - 1];
+    if (last && last.senderId && last.senderId !== currentUser.uid) {
+      try { playSound('receive'); } catch {}
+    }
+    lastCountRef.current = chatMessages.length;
+  }, [chatMessages, currentUser]);
+
   // Charger les messages quand un chat est activé
   useEffect(() => {
     if (activeChat) {
@@ -203,12 +217,12 @@ const ChatPage = () => {
   if (!currentChat) {
     return (
       <>
-        <div className="chat-error">
-          <h3>Chat non trouvé</h3>
+      <div className="chat-error">
+        <h3>Chat non trouvé</h3>
           <button onClick={() => setShowDrawer(true)} className="btn btn-primary">
-            Retour aux contacts
-          </button>
-        </div>
+          Retour aux contacts
+        </button>
+      </div>
         <ContactsDrawer
           visible={showDrawer}
           onClose={() => setShowDrawer(false)}
