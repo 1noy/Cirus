@@ -12,7 +12,7 @@ import ChatHeader from '../features/chat/ChatHeader';
 import ChatInfoPanel from '../features/chat/ChatInfoPanel';
 import PinnedBar from '../features/chat/PinnedBar';
 import { pinMessage, unpinMessage } from '../features/chat/chatService';
-import '../styles/telegram.css';
+import '../styles/chat.css';
 
 const Chat = () => {
   const { logout, user } = useAppStore();
