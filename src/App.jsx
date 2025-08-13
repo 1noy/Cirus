@@ -101,6 +101,7 @@ function App() {
         // Charger les préférences utilisateur
         const savedTheme = localStorage.getItem('theme') || 'dark';
         setTheme(savedTheme);
+        document.documentElement.setAttribute('data-theme', savedTheme);
 
         // Écouter les changements d'authentification Firebase
         const unsubscribe = auth.onAuthStateChanged((user) => {
