@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useMemo } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import {
   createBrowserRouter,
   RouterProvider,
@@ -10,11 +10,13 @@ import { Toaster } from 'react-hot-toast';
 
 // Import des styles cyberpunk
 import './styles/cyberpunk.css';
+import './styles/chat.css';
 
 // Nouvelles pages minimalistes
 const AuthPage = lazy(() => import('./pages/Auth'));
 const Chat = lazy(() => import('./pages/Chat'));
 const ErrorFallback = lazy(() => import('./components/ErrorFallback'));
+const WelcomeAnimation = lazy(() => import('./components/WelcomeAnimation'));
 
 // Hooks personnalisés
 import { useAppStore } from './store';
@@ -82,6 +84,11 @@ const toastConfig = {
 
 function App() {
   const { initializeApp, setUser, setTheme, addError } = useAppStore();
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try {
+      return localStorage.getItem('welcome_shown') !== '1';
+    } catch { return true; }
+  });
 
   // Initialisation de l'application
   useEffect(() => {
@@ -155,6 +162,18 @@ function App() {
       >
         <ToastProvider>
           <NotificationManager />
+          {showWelcome && (
+            <LazyComponent
+              component={() => (
+                <WelcomeAnimation
+                  onComplete={() => {
+                    setShowWelcome(false);
+                    try { localStorage.setItem('welcome_shown', '1'); } catch {}
+                  }}
+                />
+              )}
+            />
+          )}
           <div className="app">
             <RouterProvider
               router={useMemo(() => createBrowserRouter([
@@ -185,7 +204,7 @@ function App() {
                 },
               }), [])}
             />
-            {/* <Toaster {...toastConfig} /> */}
+            <Toaster {...toastConfig} />
           </div>
         </ToastProvider>
       </ErrorBoundary>
