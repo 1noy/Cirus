@@ -26,7 +26,8 @@ export const initNotifications = async (onForegroundMessage) => {
   const messaging = getMessaging(app);
   const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
   try {
-    const permission = await Notification.requestPermission();
+    const hasPermissionAPI = typeof globalThis !== 'undefined' && 'Notification' in globalThis && typeof globalThis.Notification?.requestPermission === 'function';
+    const permission = await (hasPermissionAPI ? globalThis.Notification.requestPermission() : Promise.resolve('denied'));
     if (permission !== 'granted') return null;
     const token = await getToken(messaging, { vapidKey });
     onMessage(messaging, (payload) => {

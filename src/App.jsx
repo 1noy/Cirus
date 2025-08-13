@@ -14,7 +14,7 @@ import './styles/chat.css';
 
 // Nouvelles pages minimalistes
 const AuthPage = lazy(() => import('./pages/Auth'));
-const Chat = lazy(() => import('./pages/Chat'));
+const Chat = lazy(() => import('./components/ChatPage'));
 const ErrorFallback = lazy(() => import('./components/ErrorFallback'));
 const WelcomeAnimation = lazy(() => import('./components/WelcomeAnimation'));
 
