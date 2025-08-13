@@ -330,12 +330,17 @@ const ChatPage = () => {
                         )}
                       </div>
                       
-                      {/* Réactions */}
+                      {/* Réactions (bulles regroupées) */}
                       {message.reactions && Object.keys(message.reactions).length > 0 && (
-                        <div className="message-reactions">
-                          {Object.entries(message.reactions).map(([userId, emoji]) => (
-                            <span key={userId} className="reaction">
-                              {emoji}
+                        <div className="reaction-cluster">
+                          {Object.entries(
+                            Object.values(message.reactions).reduce((acc, e) => {
+                              acc[e] = (acc[e] || 0) + 1; return acc;
+                            }, {})
+                          ).map(([emoji, count]) => (
+                            <span key={emoji} className="reaction-bubble">
+                              <span className="emoji">{emoji}</span>
+                              <span className="count">{count}</span>
                             </span>
                           ))}
                         </div>

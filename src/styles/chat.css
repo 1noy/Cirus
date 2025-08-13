@@ -93,6 +93,13 @@
 .messages-container .message-item.other { animation-delay: .04s; }
 @keyframes msgEnter { from { transform: translateY(6px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
+/* Réactions: bulles groupées */
+.message-reactions { display: flex; gap: 6px; margin-top: 8px; }
+.reaction-cluster { position: absolute; bottom: -12px; right: 8px; display: flex; gap: 6px; }
+.reaction-bubble { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 999px; font-size: 12px; background: rgba(168,85,247,0.18); color: var(--txt); border: 1px solid rgba(168,85,247,0.35); box-shadow: 0 6px 16px rgba(168,85,247,0.25); animation: bubblePop .24s ease; }
+.reaction-bubble .count { font-weight: 700; color: #f0d9ff; }
+@keyframes bubblePop { from { transform: scale(0.8); opacity: .6; } to { transform: scale(1); opacity: 1; } }
+
 .message-actions { position: absolute; right: -6px; top: 50%; transform: translateY(-50%); display: flex; gap: 6px; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
 .message-item:hover .message-actions { opacity: 1; pointer-events: auto; }
 

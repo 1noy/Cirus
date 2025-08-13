@@ -6,6 +6,7 @@ import {
 } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ErrorBoundary } from 'react-error-boundary';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 
 // Import des styles cyberpunk
@@ -178,8 +179,10 @@ function App() {
             />
           )}
           <div className="app">
-            <RouterProvider
-              router={useMemo(() => createBrowserRouter([
+            <AnimatePresence mode="wait">
+              <motion.div key={location?.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
+                <RouterProvider
+                  router={useMemo(() => createBrowserRouter([
                 {
                   path: '/login',
                   element: (
@@ -201,12 +204,11 @@ function App() {
                   element: <Navigate to="/" replace />,
                 },
               ], {
-                future: {
-                  v7_startTransition: true,
-                  v7_relativeSplatPath: true,
-                },
-              }), [])}
-            />
+                    future: { v7_startTransition: true, v7_relativeSplatPath: true },
+                  }), [])}
+                />
+              </motion.div>
+            </AnimatePresence>
             <Toaster {...toastConfig} />
           </div>
         </ToastProvider>
