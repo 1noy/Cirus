@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store';
 import ContactsDrawer from './ContactsDrawer';
+import { playSound } from '../utils/sound';
 
 const ChatPage = () => {
   const { chatId } = useParams();
@@ -80,6 +81,7 @@ const ChatPage = () => {
         }
         
         await addMessage(currentChat.id, newMessage);
+        playSound('send');
         setMessageText('');
         setReplyToMessage(null);
         setShowEmojiPicker(false);
@@ -141,6 +143,7 @@ const ChatPage = () => {
         userId: currentUser.uid,
         emoji: emoji
       });
+      playSound('reaction');
       setShowReactions(null);
     }
   };

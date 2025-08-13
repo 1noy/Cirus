@@ -87,6 +87,12 @@
 .message-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; color: var(--muted); font-size: 11px; }
 .edited-indicator { color: var(--muted); font-size: 11px; margin-left: 4px; }
 
+/* Animations d'apparition */
+.messages-container .message-item { animation: msgEnter .35s ease forwards; transform-origin: bottom; opacity: 0; }
+.messages-container .message-item.own { animation-delay: .02s; }
+.messages-container .message-item.other { animation-delay: .04s; }
+@keyframes msgEnter { from { transform: translateY(6px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
 .message-actions { position: absolute; right: -6px; top: 50%; transform: translateY(-50%); display: flex; gap: 6px; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
 .message-item:hover .message-actions { opacity: 1; pointer-events: auto; }
 
