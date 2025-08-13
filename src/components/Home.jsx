@@ -37,30 +37,13 @@ const Home = () => {
   const isSearchActive = activeSection === 'search';
 
   return (
-    <div className="home-container" style={{ 
-      background: 'linear-gradient(135deg, #000000, #1a1a2e)',
-      minHeight: '100vh',
-      padding: '20px'
-    }}>
+    <div className="home-page">
       {/* Navigation en haut */}
-      <nav className="top-navigation" style={{ 
-        background: 'rgba(255, 0, 255, 0.2)', 
-        padding: '10px',
-        borderRadius: '10px',
-        marginBottom: '20px'
-      }}>
+      <nav className="home-tabs">
         <div className="nav-buttons">
           <button 
             onClick={() => handleSectionChange('home')}
             className={`nav-tab ${isHomeActive ? 'active' : ''}`}
-            style={{ 
-              background: isHomeActive ? '#ff00ff' : '#333',
-              color: '#fff',
-              padding: '10px 20px',
-              border: 'none',
-              borderRadius: '5px',
-              margin: '0 5px'
-            }}
           >
             <i className="fas fa-home"></i>
             <span>Accueil</span>
@@ -69,14 +52,6 @@ const Home = () => {
           <button 
             onClick={() => handleSectionChange('messages')}
             className={`nav-tab ${isMessagesActive ? 'active' : ''}`}
-            style={{ 
-              background: isMessagesActive ? '#ff00ff' : '#333',
-              color: '#fff',
-              padding: '10px 20px',
-              border: 'none',
-              borderRadius: '5px',
-              margin: '0 5px'
-            }}
           >
             <i className="fas fa-comments"></i>
             <span>Messages</span>
@@ -90,14 +65,6 @@ const Home = () => {
           <button 
             onClick={() => handleSectionChange('search')}
             className={`nav-tab ${isSearchActive ? 'active' : ''}`}
-            style={{ 
-              background: isSearchActive ? '#ff00ff' : '#333',
-              color: '#fff',
-              padding: '10px 20px',
-              border: 'none',
-              borderRadius: '5px',
-              margin: '0 5px'
-            }}
           >
             <i className="fas fa-search"></i>
             <span>Recherche</span>
@@ -109,13 +76,6 @@ const Home = () => {
             onClick={handleProfileSettingsToggle}
             className="btn btn-icon profile-btn"
             title="Paramètres du profil"
-            style={{ 
-              background: '#00ffff',
-              color: '#000',
-              padding: '10px',
-              border: 'none',
-              borderRadius: '5px'
-            }}
           >
             <i className="fas fa-cog"></i>
           </button>
@@ -123,13 +83,7 @@ const Home = () => {
       </nav>
 
       {/* Contenu principal */}
-      <div className="main-content" style={{ 
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 'calc(100vh - 100px)'
-      }}>
+      <div className="home-content">
         <AnimatePresence mode="wait">
           {isHomeActive && (
             <motion.div
@@ -137,14 +91,7 @@ const Home = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="content-section"
-              style={{ 
-                textAlign: 'center',
-                background: 'rgba(255, 0, 255, 0.3)',
-                padding: '40px',
-                borderRadius: '20px',
-                border: '2px solid #ff00ff'
-              }}
+              className="content-section hero"
             >
               <div className="cirus-neon-text" style={{
                 fontSize: '4rem',
@@ -154,21 +101,10 @@ const Home = () => {
               }}>
                 CIRUS
               </div>
-              <p style={{ 
-                color: '#ffffff', 
-                fontSize: '1.2rem',
-                marginTop: '20px',
-                background: 'rgba(0, 255, 255, 0.2)',
-                padding: '10px',
-                borderRadius: '5px'
-              }}>
+              <p className="status-pill">
                 ✅ Application CirusChat - Fonctionnelle
               </p>
-              <p style={{ 
-                color: '#ffff00', 
-                fontSize: '1rem',
-                marginTop: '10px'
-              }}>
+              <p className="url-hint">
                 URL: http://192.168.0.103:5173
               </p>
             </motion.div>
@@ -180,11 +116,6 @@ const Home = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               className="content-section"
-              style={{ 
-                background: 'rgba(0, 255, 255, 0.2)',
-                padding: '20px',
-                borderRadius: '10px'
-              }}
             >
               <div className="contacts-wrapper">
                 <ContactsList 
@@ -201,11 +132,6 @@ const Home = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               className="content-section"
-              style={{ 
-                background: 'rgba(255, 255, 0, 0.2)',
-                padding: '20px',
-                borderRadius: '10px'
-              }}
             >
               <div className="search-header">
                 <h2>

@@ -11,11 +11,13 @@ import { Toaster } from 'react-hot-toast';
 
 // Import des styles cyberpunk
 import './styles/cyberpunk.css';
+import './styles/navigation.css';
 
 // Composants lazy
 const CyberpunkAuth = lazy(() => import('./components/CyberpunkAuth'));
 const ChatPage = lazy(() => import('./components/ChatPage'));
 const Home = lazy(() => import('./components/Home'));
+const UserSearchPage = lazy(() => import('./components/UserSearchPage'));
 const ErrorFallback = lazy(() => import('./components/ErrorFallback'));
 const PWAInstall = lazy(() => import('./components/PWAInstall'));
 const PerformanceMonitor = lazy(() => import('./components/PerformanceMonitor'));
@@ -24,6 +26,7 @@ const PerformanceMonitor = lazy(() => import('./components/PerformanceMonitor'))
 import { useAppStore } from './store';
 import { auth } from './utils/firebase';
 import { ToastProvider } from './components/ToastContext';
+import AppShell from './components/layout/AppShell';
 import NotificationManager from './components/NotificationManager';
 import { registerServiceWorker } from './utils/pwa';
 import { performanceMonitor } from './utils/performance-monitor';
@@ -199,35 +202,36 @@ function App() {
             <ToastProvider>
               <NotificationManager />
               <PWAInstall />
-              <div className="app">
-                <Routes>
-                  <Route
-                    path="/login"
-                    element={
-                      <PublicRoute>
-                        <LazyComponent component={CyberpunkAuth} />
-                      </PublicRoute>
-                    }
-                  />
-                  <Route
-                    path="/chat/:chatId?"
-                    element={
-                      <ProtectedRoute>
-                        <LazyComponent component={ChatPage} />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/"
-                    element={<LazyComponent component={Home} />}
-                  />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
+                              <AppShell>
+                  <Routes>
+                    <Route
+                      path="/login"
+                      element={
+                        <PublicRoute>
+                          <LazyComponent component={CyberpunkAuth} />
+                        </PublicRoute>
+                      }
+                    />
+                    <Route
+                      path="/chat/:chatId?"
+                      element={
+                        <ProtectedRoute>
+                          <LazyComponent component={ChatPage} />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="/search" element={<LazyComponent component={UserSearchPage} />} />
+                    <Route path="/profile" element={<LazyComponent component={ProfileSettings} />} />
+                    <Route
+                      path="/"
+                      element={<LazyComponent component={Home} />}
+                    />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
 
-                {/* Toaster désactivé pour enlever les notifications en haut */}
-                {/* <Toaster {...toastConfig} /> */}
-              </div>
-              <PerformanceMonitor />
+                  {/* <Toaster {...toastConfig} /> */}
+                </AppShell>
+                <PerformanceMonitor />
             </ToastProvider>
           </ErrorBoundary>
         </Router>
