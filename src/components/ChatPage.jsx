@@ -219,7 +219,17 @@ const ChatPage = () => {
   }
 
   return (
-    <div className="chat-page">
+    <div className="chat-page" style={{ display: 'grid', gridTemplateColumns: '320px 1fr' }}>
+      <div className="chat-drawer-desktop">
+        <ContactsDrawer
+          pinned
+          chats={chats}
+          contacts={contacts}
+          messages={messages}
+          currentUserId={currentUser?.uid}
+          onSelectChat={handleSelectChat}
+        />
+      </div>
       <div className="chat-header">
         <button onClick={handleBackToContacts} className="btn btn-icon btn-outline">
           <i className="fas fa-arrow-left"></i>
@@ -554,6 +564,7 @@ const ChatPage = () => {
         onClose={() => setShowDrawer(false)}
         chats={chats}
         contacts={contacts}
+        messages={messages}
         currentUserId={currentUser?.uid}
         onSelectChat={handleSelectChat}
       />
