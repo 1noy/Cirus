@@ -69,14 +69,14 @@ const AuthPage = () => {
             <div className="form-group">
               <label htmlFor="email">Adresse e-mail</label>
               <div className="form-input">
-                <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemple.com" required />
+                <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemple.com" required />
               </div>
             </div>
 
             <div className="form-group">
               <label htmlFor="password">Mot de passe</label>
               <div className="form-input password-input">
-                <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Votre mot de passe" required />
+                <input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Votre mot de passe" required />
               </div>
             </div>
 
