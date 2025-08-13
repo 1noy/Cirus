@@ -140,37 +140,126 @@ const Home = () => {
               className="content-section"
               style={{ 
                 textAlign: 'center',
-                background: 'rgba(255, 0, 255, 0.3)',
+                background: 'linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(0, 255, 255, 0.1))',
                 padding: '40px',
                 borderRadius: '20px',
-                border: '2px solid #ff00ff'
+                border: '2px solid transparent',
+                backgroundClip: 'padding-box',
+                position: 'relative',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 8px 32px rgba(255, 0, 255, 0.3)'
               }}
             >
+              {/* Effet de particules en arrière-plan */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'radial-gradient(circle at 20% 80%, rgba(255, 0, 255, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.1) 0%, transparent 50%)',
+                borderRadius: '20px',
+                pointerEvents: 'none'
+              }}></div>
+              
               <div className="cirus-neon-text" style={{
-                fontSize: '4rem',
+                fontSize: '5rem',
                 color: '#ff00ff',
-                textShadow: '0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff',
-                marginBottom: '20px'
+                textShadow: '0 0 20px #ff00ff, 0 0 40px #ff00ff, 0 0 60px #ff00ff',
+                marginBottom: '30px',
+                fontWeight: 'bold',
+                letterSpacing: '0.2em',
+                animation: 'neonPulse 2s ease-in-out infinite alternate'
               }}>
                 CIRUS
               </div>
-              <p style={{ 
-                color: '#ffffff', 
-                fontSize: '1.2rem',
-                marginTop: '20px',
-                background: 'rgba(0, 255, 255, 0.2)',
-                padding: '10px',
-                borderRadius: '5px'
+              
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 255, 0.2))',
+                padding: '20px',
+                borderRadius: '15px',
+                marginBottom: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
               }}>
-                ✅ Application CirusChat - Fonctionnelle
-              </p>
-              <p style={{ 
-                color: '#ffff00', 
-                fontSize: '1rem',
-                marginTop: '10px'
+                <h2 style={{
+                  color: '#ffffff',
+                  fontSize: '1.5rem',
+                  marginBottom: '10px',
+                  fontWeight: '600'
+                }}>
+                  🚀 Application de Messagerie Moderne
+                </h2>
+                <p style={{
+                  color: '#e0e0e0',
+                  fontSize: '1rem',
+                  lineHeight: '1.6',
+                  marginBottom: '15px'
+                }}>
+                  Connectez-vous avec vos amis en temps réel avec une interface cyberpunk unique
+                </p>
+              </div>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '15px',
+                marginTop: '30px'
               }}>
-                URL: http://192.168.0.103:5173
-              </p>
+                <div style={{
+                  background: 'rgba(255, 0, 255, 0.1)',
+                  padding: '15px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255, 0, 255, 0.3)'
+                }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '10px' }}>💬</div>
+                  <h3 style={{ color: '#ff00ff', marginBottom: '5px' }}>Messages</h3>
+                  <p style={{ color: '#cccccc', fontSize: '0.9rem' }}>Chat en temps réel</p>
+                </div>
+                
+                <div style={{
+                  background: 'rgba(0, 255, 255, 0.1)',
+                  padding: '15px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(0, 255, 255, 0.3)'
+                }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '10px' }}>🔍</div>
+                  <h3 style={{ color: '#00ffff', marginBottom: '5px' }}>Recherche</h3>
+                  <p style={{ color: '#cccccc', fontSize: '0.9rem' }}>Trouvez des amis</p>
+                </div>
+                
+                <div style={{
+                  background: 'rgba(255, 255, 0, 0.1)',
+                  padding: '15px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255, 255, 0, 0.3)'
+                }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '10px' }}>⚙️</div>
+                  <h3 style={{ color: '#ffff00', marginBottom: '5px' }}>Paramètres</h3>
+                  <p style={{ color: '#cccccc', fontSize: '0.9rem' }}>Personnalisez</p>
+                </div>
+              </div>
+              
+              <div style={{
+                marginTop: '25px',
+                padding: '15px',
+                background: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '10px',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <p style={{
+                  color: '#00ff00',
+                  fontSize: '0.9rem',
+                  marginBottom: '5px'
+                }}>
+                  ✅ Système opérationnel
+                </p>
+                <p style={{
+                  color: '#ffff00',
+                  fontSize: '0.8rem'
+                }}>
+                  URL: https://cirus-chat-git.vercel.app
+                </p>
+              </div>
             </motion.div>
           )}
           {isMessagesActive && (

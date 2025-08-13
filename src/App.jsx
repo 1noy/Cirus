@@ -1,8 +1,7 @@
-import React, { lazy, Suspense, useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo } from 'react';
 import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
+  createBrowserRouter,
+  RouterProvider,
   Navigate,
 } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
@@ -12,24 +11,17 @@ import { Toaster } from 'react-hot-toast';
 // Import des styles cyberpunk
 import './styles/cyberpunk.css';
 
-// Composants lazy
-const CyberpunkAuth = lazy(() => import('./components/CyberpunkAuth'));
-const ChatPage = lazy(() => import('./components/ChatPage'));
-const Home = lazy(() => import('./components/Home'));
+// Nouvelles pages minimalistes
+const AuthPage = lazy(() => import('./pages/Auth'));
+const Chat = lazy(() => import('./pages/Chat'));
 const ErrorFallback = lazy(() => import('./components/ErrorFallback'));
-const PWAInstall = lazy(() => import('./components/PWAInstall'));
-const PerformanceMonitor = lazy(() => import('./components/PerformanceMonitor'));
 
 // Hooks personnalisés
 import { useAppStore } from './store';
 import { auth } from './utils/firebase';
 import { ToastProvider } from './components/ToastContext';
 import NotificationManager from './components/NotificationManager';
-import { registerServiceWorker } from './utils/pwa';
-import { performanceMonitor } from './utils/performance-monitor';
-import { performanceOptimizer } from './utils/advanced-optimizations';
-import { CacheProvider } from './components/SmartCache';
-import { androidOptimizer } from './utils/android-optimizations';
+import { initNotifications } from './features/notifications/notifications';
 
 // Configuration React Query
 const queryClient = new QueryClient({
@@ -89,7 +81,7 @@ const toastConfig = {
 };
 
 function App() {
-  const { initializeApp, setUser, setTheme, addError, initializeTestUsers } = useAppStore();
+  const { initializeApp, setUser, setTheme, addError } = useAppStore();
 
   // Initialisation de l'application
   useEffect(() => {
@@ -98,37 +90,9 @@ function App() {
         // Initialiser le store
         await initializeApp();
 
-        // Initialiser les utilisateurs de test (sans await pour éviter le blocage)
-        initializeTestUsers().catch(error => {
-          console.warn('Erreur lors de l\'initialisation des utilisateurs de test:', error);
-        });
-
-        // Enregistrer le service worker PWA (sans await)
-        registerServiceWorker().catch(error => {
-          console.warn('Erreur lors de l\'enregistrement du service worker:', error);
-        });
-
-        // Démarrer le moniteur de performances
-        performanceMonitor.start();
-
-        // Initialiser les optimisations avancées
-        performanceOptimizer.init();
-
-        // Initialiser les optimisations Android
-        androidOptimizer.init();
-
         // Charger les préférences utilisateur
         const savedTheme = localStorage.getItem('theme') || 'dark';
         setTheme(savedTheme);
-
-        // Utilisateur de test temporaire pour le développement
-        const testUser = {
-          uid: 'test-user-123',
-          email: 'test@cirus.com',
-          displayName: 'Utilisateur Test',
-          photoURL: null
-        };
-        setUser(testUser);
 
         // Écouter les changements d'authentification Firebase
         const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -141,6 +105,8 @@ function App() {
             };
             setUser(userData);
             localStorage.setItem('user', JSON.stringify(userData));
+            // Initialiser FCM après login
+            initNotifications().catch(() => {});
           } else {
             setUser(null);
             localStorage.removeItem('user');
@@ -155,7 +121,7 @@ function App() {
     };
 
     initApp();
-  }, [initializeApp, setTheme, setUser, addError, initializeTestUsers]);
+  }, [initializeApp, setTheme, setUser, addError]);
 
   // Surveillance des erreurs globales
   useEffect(() => {
@@ -178,60 +144,51 @@ function App() {
     };
   }, [addError]);
 
-  // Nettoyage des optimisations
-  useEffect(() => {
-    return () => {
-      performanceOptimizer.destroy();
-    };
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
-      <CacheProvider maxSize={200}>
-        <Router>
-          <ErrorBoundary
-            FallbackComponent={ErrorFallback}
-            onError={(error, errorInfo) => {
-              addError(error);
-              console.error('Erreur dans ErrorBoundary:', error, errorInfo);
-            }}
-          >
-            <ToastProvider>
-              <NotificationManager />
-              <PWAInstall />
-              <div className="app">
-                <Routes>
-                  <Route
-                    path="/login"
-                    element={
-                      <PublicRoute>
-                        <LazyComponent component={CyberpunkAuth} />
-                      </PublicRoute>
-                    }
-                  />
-                  <Route
-                    path="/chat/:chatId?"
-                    element={
-                      <ProtectedRoute>
-                        <LazyComponent component={ChatPage} />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/"
-                    element={<LazyComponent component={Home} />}
-                  />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-
-                {/* Toaster désactivé pour enlever les notifications en haut */}
-                {/* <Toaster {...toastConfig} /> */}
-              </div>
-              <PerformanceMonitor />
-            </ToastProvider>
-          </ErrorBoundary>
-        </Router>
-      </CacheProvider>
+      <ErrorBoundary
+        FallbackComponent={ErrorFallback}
+        onError={(error, errorInfo) => {
+          addError(error);
+          console.error('Erreur dans ErrorBoundary:', error, errorInfo);
+        }}
+      >
+        <ToastProvider>
+          <NotificationManager />
+          <div className="app">
+            <RouterProvider
+              router={useMemo(() => createBrowserRouter([
+                {
+                  path: '/login',
+                  element: (
+                    <PublicRoute>
+                      <LazyComponent component={AuthPage} />
+                    </PublicRoute>
+                  ),
+                },
+                {
+                  path: '/',
+                  element: (
+                    <ProtectedRoute>
+                      <LazyComponent component={Chat} />
+                    </ProtectedRoute>
+                  ),
+                },
+                {
+                  path: '*',
+                  element: <Navigate to="/" replace />,
+                },
+              ], {
+                future: {
+                  v7_startTransition: true,
+                  v7_relativeSplatPath: true,
+                },
+              }), [])}
+            />
+            {/* <Toaster {...toastConfig} /> */}
+          </div>
+        </ToastProvider>
+      </ErrorBoundary>
     </QueryClientProvider>
   );
 }

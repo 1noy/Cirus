@@ -20,11 +20,20 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,css,md}\"",
     "test": "vitest",
+    "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "analyze": "vite-bundle-analyzer"
+    "test:performance": "vitest --run src/test/performance/",
+    "test:integration": "vitest --run src/test/integration/",
+    "test:e2e": "playwright test",
+    "analyze": "vite-bundle-analyzer",
+    "demo": "node scripts/demo.js",
+    "type-check": "tsc --noEmit",
+    "dev:analyze": "vite build --mode analyze",
+    "deploy:vercel": "vercel --prod"
   },
   "dependencies": {
     "clsx": "^2.0.0",
